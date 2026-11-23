@@ -126,6 +126,34 @@ function updateClock() {
 updateClock();
 setInterval(updateClock, 15000);
 
+function renderQuotaHtml(u) {
+  if (!u || typeof u.weekly_left_pct !== "number") {
+    return `<div class="quota-grid"><div class="quota-item"><div class="quota-head"><span class="quota-label">Weekly</span><span class="quota-val">Pending sync</span></div></div><div class="quota-item"><div class="quota-head"><span class="quota-label">Overall</span><span class="quota-val">Pending sync</span></div></div></div>`;
+  }
+  const wLeft = Math.max(0, Math.min(100, u.weekly_left_pct));
+  const wTone = wLeft > 40 ? "ok" : wLeft >= 15 ? "warn" : "low";
+  const tLeftPct = Math.max(0, Math.min(100, 100 - (Number(u.tokens_used_pct) || 0)));
+  return `
+    <div class="quota-grid">
+      <div class="quota-item">
+        <div class="quota-head">
+          <span class="quota-label">Weekly Left</span>
+          <span class="quota-val">${esc(wLeft)}%</span>
+        </div>
+        <div class="quota-bar-track"><div class="quota-bar-fill ${wTone}" style="width:${wLeft}%"></div></div>
+        <div class="quota-sub">${u.weekly_reset ? `resets ${esc(u.weekly_reset)}` : esc(u.plan || "")}</div>
+      </div>
+      <div class="quota-item">
+        <div class="quota-head">
+          <span class="quota-label">Overall Tokens</span>
+          <span class="quota-val">${esc(tLeftPct)}% left</span>
+        </div>
+        <div class="quota-bar-track"><div class="quota-bar-fill ok" style="width:${tLeftPct}%"></div></div>
+        <div class="quota-sub">${esc(u.tokens_left || "N/A")}</div>
+      </div>
+    </div>`;
+}
+
 function renderStatusBar() {
   const isLive = state.mode === "live";
   els.btnConnect.textContent = isLive ? "LIVE BUS" : "DEMO PREVIEW";
@@ -144,9 +172,11 @@ function renderStatusBar() {
         const st = state.heartbeats?.[m.id]?.status || "online";
         const col = STATUS_DOT[st] || "#0ea5e9";
         const sel = m.id === selectedDesk ? "selected" : "";
+        const u = state.usage?.[m.id];
+        const pctTag = typeof u?.weekly_left_pct === "number" ? `<span class="pill-pct">${esc(u.weekly_left_pct)}%</span>` : "";
         return `<button type="button" class="roster-pill ${sel}" data-pick="${esc(m.id)}">
           <i class="dot" style="background:${col}"></i>
-          <strong>${esc(displayName(m.id))}</strong> · ${esc(st)}
+          <strong>${esc(displayName(m.id))}</strong> · ${esc(st)} ${pctTag}
         </button>`;
       })
       .join("") +
@@ -166,9 +196,11 @@ function renderStatusBar() {
 function renderCrew() {
   els.crewList.innerHTML = ROSTER.map((m) => {
     const hb = state.heartbeats?.[m.id] || {};
+    const u = state.usage?.[m.id];
     const status = hb.status || (m.role === "STANDBY" ? "standby" : "online");
     const col = STATUS_DOT[status] || "#0ea5e9";
     const sel = m.id === selectedDesk ? "selected" : "";
+    const quotaHtml = m.role === "STANDBY" ? "" : renderQuotaHtml(u);
     return `
       <div class="crew-card ${sel}" style="--crew-color:${m.color}" data-crew="${esc(m.id)}">
         <div class="crew-top">
@@ -179,6 +211,7 @@ function renderCrew() {
           <span class="crew-meta">${esc(status.toUpperCase())} · ${esc(hb.balance || "$0.00")}</span>
         </div>
         <div class="crew-task">${esc(hb.task || m.subtitle)}</div>
+        ${quotaHtml}
         <div class="crew-actions">
           <span class="crew-meta">${esc(hb.updated_at ? shortTime(hb.updated_at) : "sync")}</span>
           <div>
@@ -281,7 +314,9 @@ function renderFeed() {
 function renderInspector() {
   const meta = ROSTER_BY_ID[selectedDesk] || ROSTER[0];
   const hb = state.heartbeats?.[meta.id] || {};
+  const u = state.usage?.[meta.id];
   const status = hb.status || (meta.role === "STANDBY" ? "standby" : "online");
+  const quotaHtml = meta.role === "STANDBY" ? "" : renderQuotaHtml(u);
   els.inspectorCard.innerHTML = `
     <div class="inspector-head">
       <div class="inspector-title">
@@ -290,6 +325,7 @@ function renderInspector() {
       </div>
       <p class="inspector-sub">${esc(meta.subtitle)} (${esc(meta.id)})</p>
     </div>
+    ${quotaHtml}
     <div class="kv-list">
       <div class="kv-row">
         <div class="kv-k">Status</div>

@@ -137,6 +137,12 @@ export const DEMO_STATE = {
   ],
   orders: [],
   acks: [],
+  usage: {
+    "muse-3": { plan: "Free plan", weekly_reset: "Nov 24", weekly_used_pct: 69, weekly_left_pct: 31, tokens_used_pct: 0, tokens_left: "2B tokens left" },
+    "muse-1": { plan: "Free plan", weekly_reset: "Nov 24", weekly_used_pct: 45, weekly_left_pct: 55, tokens_used_pct: 0, tokens_left: "2B tokens left" },
+    "muse-4": { plan: "Free plan", weekly_reset: "Nov 24", weekly_used_pct: 52, weekly_left_pct: 48, tokens_used_pct: 0, tokens_left: "2B tokens left" },
+    "muse-5": { plan: "Free plan", weekly_reset: "Nov 24", weekly_used_pct: 58, weekly_left_pct: 42, tokens_used_pct: 0, tokens_left: "2B tokens left" },
+  },
 };
 
 export function loadBusConfig() {
@@ -256,6 +262,13 @@ export async function fetchBusState(config) {
     .filter(Boolean)
     .sort((a, b) => (b.updated_at || "").localeCompare(a.updated_at || ""));
 
+  const usage = {};
+  const usageFiles = await ghListFiles(config, "usage");
+  const usageData = await Promise.all(usageFiles.map((f) => ghGetJson(config, f.path)));
+  for (let i = 0; i < usageFiles.length; i++) {
+    if (usageData[i]) usage[usageFiles[i].name.replace(/\.json$/, "")] = usageData[i];
+  }
+
   return {
     mode: "live",
     repo: config.repo,
@@ -263,6 +276,7 @@ export async function fetchBusState(config) {
     chat,
     orders,
     acks,
+    usage,
   };
 }
 
