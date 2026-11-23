@@ -11,12 +11,12 @@ const STATUS_COLORS = {
 };
 
 const COWORKER_LOOK = {
-  "muse-3": { x: 144, y: 82, shirt: "#f59e0b", hair: "#475569", hat: "beret", badge: "#d97706", facingDesk: false },
-  "muse-1": { x: 222, y: 242, shirt: "#3b82f6", hair: "#1e293b", hat: "headphones", badge: "#2563eb", facingDesk: true },
-  "muse-4": { x: 368, y: 232, shirt: "#10b981", hair: "#3f2e21", hat: "glasses", badge: "#059669", facingDesk: true },
-  "muse-5": { x: 462, y: 342, shirt: "#8b5cf6", hair: "#0f766e", hat: "cap", badge: "#7c3aed", facingDesk: true },
-  "muse-6": { x: 256, y: 492, shirt: "#64748b", hair: "#78350f", hat: "none", badge: "#64748b", facingDesk: false },
-  "muse-7": { x: 742, y: 494, shirt: "#64748b", hair: "#312e81", hat: "none", badge: "#64748b", facingDesk: false },
+  "muse-3": { x: 144, y: 82, shirt: "#f59e0b", hair: "#475569", hat: "beret", badge: "#d97706" },
+  "muse-1": { x: 222, y: 242, shirt: "#3b82f6", hair: "#1e293b", hat: "headphones", badge: "#2563eb" },
+  "muse-4": { x: 368, y: 232, shirt: "#10b981", hair: "#3f2e21", hat: "glasses", badge: "#059669" },
+  "muse-5": { x: 462, y: 342, shirt: "#8b5cf6", hair: "#0f766e", hat: "cap", badge: "#7c3aed" },
+  "muse-6": { x: 256, y: 492, shirt: "#64748b", hair: "#78350f", hat: "none", badge: "#64748b" },
+  "muse-7": { x: 742, y: 494, shirt: "#64748b", hair: "#312e81", hat: "none", badge: "#64748b" },
 };
 
 function pxRect(ctx, x, y, w, h, color) {
@@ -70,17 +70,13 @@ function drawChair(ctx, x, y) {
 }
 
 function drawDesk(ctx, x, y, accentColor, isActive) {
-  // Shadow
   pxRect(ctx, x - 34, y + 4, 70, 32, "rgba(59, 49, 42, 0.14)");
-  // Wood surface
   pxRect(ctx, x - 34, y, 68, 30, "#c4884d");
   pxRect(ctx, x - 34, y + 26, 68, 6, "#9c6633");
   pxRect(ctx, x - 32, y + 2, 64, 22, "#d49b62");
-  // Monitor
   pxRect(ctx, x - 14, y - 6, 28, 20, "#334155");
   pxRect(ctx, x - 12, y - 4, 24, 15, isActive ? accentColor : "#1e293b");
   pxRect(ctx, x - 4, y + 14, 8, 4, "#475569");
-  // Sticky notes & paper + mug
   pxRect(ctx, x - 28, y + 8, 10, 12, "#f8fafc");
   pxRect(ctx, x - 26, y + 11, 6, 2, "#cbd5e1");
   pxRect(ctx, x + 18, y + 6, 8, 8, "#fde047");
@@ -101,7 +97,6 @@ function drawCoworker(ctx, x, y, look, status, t, pokeOffset, isSelected) {
   const bob = isWorking ? Math.sin(t * 7 + x) * 1.3 : status === "standby" ? 0 : Math.sin(t * 2 + x) * 0.8;
   const cy = Math.round(y + bob - pokeOffset);
 
-  // Glowing floor status ring
   ctx.save();
   ctx.beginPath();
   ctx.ellipse(x, y + 20, isSelected ? 24 : 20, isSelected ? 9 : 7, 0, 0, Math.PI * 2);
@@ -114,33 +109,25 @@ function drawCoworker(ctx, x, y, look, status, t, pokeOffset, isSelected) {
   }
   ctx.restore();
 
-  // Feet
   pxRect(ctx, x - 8, cy + 12, 6, 6, "#1e293b");
   pxRect(ctx, x + 2, cy + 12, 6, 6, "#1e293b");
-
-  // Legs
   pxRect(ctx, x - 8, cy + 6, 7, 7, "#334155");
   pxRect(ctx, x + 1, cy + 6, 7, 7, "#334155");
 
-  // Torso / shirt + outline
   pxRect(ctx, x - 12, cy - 8, 24, 16, "#29201b");
   pxRect(ctx, x - 10, cy - 6, 20, 13, look.shirt);
 
-  // Arms (typing sway if working)
   const armY = isWorking ? Math.round(Math.sin(t * 14 + x) * 2) : 0;
   pxRect(ctx, x - 14, cy - 5 + armY, 5, 10, look.shirt);
   pxRect(ctx, x + 9, cy - 5 - armY, 5, 10, look.shirt);
   pxRect(ctx, x - 14, cy + 3 + armY, 4, 4, "#fde68a");
   pxRect(ctx, x + 10, cy + 3 - armY, 4, 4, "#fde68a");
 
-  // Head + face
   pxRect(ctx, x - 10, cy - 26, 20, 18, "#29201b");
   pxRect(ctx, x - 8, cy - 24, 16, 15, "#fde68a");
-  // Eyes
   pxRect(ctx, x - 5, cy - 17, 3, 3, "#1e293b");
   pxRect(ctx, x + 2, cy - 17, 3, 3, "#1e293b");
 
-  // Hair & accessories
   pxRect(ctx, x - 9, cy - 27, 18, 7, look.hair);
   if (look.hat === "beret") {
     pxRect(ctx, x - 10, cy - 30, 18, 6, "#f59e0b");
@@ -170,7 +157,7 @@ function drawBadge(ctx, x, y, label, bgColor, isSelected) {
   pillRect(ctx, bx, by, w, h, 10);
   ctx.fillStyle = bgColor;
   ctx.fill();
-  ctx.lineWidth = isSelected ? 2 : 1.2;
+  ctx.lineWidth = isSelected ? 2.2 : 1.2;
   ctx.strokeStyle = isSelected ? "#1e293b" : "#fff7ed";
   ctx.stroke();
 
@@ -184,12 +171,12 @@ function drawBadge(ctx, x, y, label, bgColor, isSelected) {
 function drawSpeechBubble(ctx, x, y, text, borderColor) {
   const clean = (text || "").trim();
   if (!clean) return;
-  const shown = clean.length > 38 ? `${clean.slice(0, 36)}…` : clean;
+  const shown = clean.length > 36 ? `${clean.slice(0, 34)}…` : clean;
   ctx.save();
   ctx.font = "500 10.5px Inter, system-ui, sans-serif";
-  const w = Math.min(206, Math.max(66, ctx.measureText(shown).width + 16));
+  const w = Math.min(202, Math.max(66, ctx.measureText(shown).width + 16));
   const h = 22;
-  const bx = Math.round(Math.max(16, Math.min(WORLD_W - w - 16, x - w / 2)));
+  const bx = Math.round(Math.max(14, Math.min(WORLD_W - w - 14, x - w / 2)));
   const by = Math.round(Math.max(12, y));
 
   pillRect(ctx, bx, by, w, h, 6);
@@ -214,7 +201,28 @@ export function createOffice2DScene({ canvas, roster, onSelect }) {
   const packets = [];
   const pokeTimers = new Map();
   let starSpring = 0;
-  let transform = { scale: 1, offX: 0, offY: 0, width: 960, height: 560 };
+
+  let viewW = 800;
+  let viewH = 500;
+  let baseScale = 1;
+  let cam = { x: WORLD_W / 2, y: WORLD_H / 2, zoom: 1 };
+  let camGoal = { x: WORLD_W / 2, y: WORLD_H / 2, zoom: 1 };
+  let userMoved = false;
+
+  function applyDefaultView(force = false) {
+    const isNarrow = viewW < 760;
+    if (!force && userMoved) return;
+    if (isNarrow) {
+      camGoal = { x: 315, y: 215, zoom: 1.78 };
+    } else {
+      camGoal = { x: WORLD_W / 2, y: WORLD_H / 2, zoom: 1.0 };
+    }
+    if (force || !userMoved) {
+      cam.x = camGoal.x;
+      cam.y = camGoal.y;
+      cam.zoom = camGoal.zoom;
+    }
+  }
 
   function resize() {
     const parent = canvas.parentElement;
@@ -228,11 +236,11 @@ export function createOffice2DScene({ canvas, roster, onSelect }) {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.imageSmoothingEnabled = false;
 
-    const pad = 18;
-    const scale = Math.min((w - pad * 2) / WORLD_W, (h - pad * 2) / WORLD_H);
-    const offX = (w - WORLD_W * scale) / 2;
-    const offY = (h - WORLD_H * scale) / 2;
-    transform = { scale, offX, offY, width: w, height: h };
+    viewW = w;
+    viewH = h;
+    const pad = w < 760 ? 8 : 18;
+    baseScale = Math.min((w - pad * 2) / WORLD_W, (h - pad * 2) / WORLD_H);
+    applyDefaultView(false);
   }
 
   window.addEventListener("resize", resize);
@@ -240,6 +248,98 @@ export function createOffice2DScene({ canvas, roster, onSelect }) {
     new ResizeObserver(resize).observe(canvas.parentElement);
   }
   resize();
+  applyDefaultView(true);
+
+  function clampCamera(target) {
+    return {
+      x: Math.max(90, Math.min(WORLD_W - 90, target.x)),
+      y: Math.max(70, Math.min(WORLD_H - 70, target.y)),
+      zoom: Math.max(0.85, Math.min(3.2, target.zoom)),
+    };
+  }
+
+  function screenToWorld(clientX, clientY) {
+    const rect = canvas.getBoundingClientRect();
+    const sx = clientX - rect.left;
+    const sy = clientY - rect.top;
+    const s = baseScale * cam.zoom;
+    return {
+      x: (sx - viewW / 2) / s + cam.x,
+      y: (sy - viewH / 2) / s + cam.y,
+    };
+  }
+
+  // Pan & Click/Tap handling
+  let dragState = null;
+
+  canvas.addEventListener("pointerdown", (ev) => {
+    canvas.setPointerCapture?.(ev.pointerId);
+    dragState = {
+      pointerId: ev.pointerId,
+      startX: ev.clientX,
+      startY: ev.clientY,
+      lastX: ev.clientX,
+      lastY: ev.clientY,
+      moved: false,
+    };
+  });
+
+  canvas.addEventListener("pointermove", (ev) => {
+    if (!dragState || ev.pointerId !== dragState.pointerId) return;
+    const dx = ev.clientX - dragState.lastX;
+    const dy = ev.clientY - dragState.lastY;
+    dragState.lastX = ev.clientX;
+    dragState.lastY = ev.clientY;
+    if (Math.hypot(ev.clientX - dragState.startX, ev.clientY - dragState.startY) > 6) {
+      dragState.moved = true;
+      userMoved = true;
+    }
+    if (dragState.moved) {
+      const s = baseScale * cam.zoom;
+      camGoal = clampCamera({
+        x: camGoal.x - dx / s,
+        y: camGoal.y - dy / s,
+        zoom: camGoal.zoom,
+      });
+      cam.x = camGoal.x;
+      cam.y = camGoal.y;
+    }
+  });
+
+  canvas.addEventListener("pointerup", (ev) => {
+    if (!dragState || ev.pointerId !== dragState.pointerId) return;
+    const wasDrag = dragState.moved;
+    dragState = null;
+    if (wasDrag) return;
+
+    const pt = screenToWorld(ev.clientX, ev.clientY);
+    if (Math.hypot(pt.x - 210, pt.y - 498) <= 24) {
+      starSpring = 1;
+      return;
+    }
+
+    for (const meta of roster) {
+      const look = COWORKER_LOOK[meta.id];
+      if (!look) continue;
+      if (Math.abs(pt.x - look.x) <= 44 && Math.abs(pt.y - look.y) <= 42) {
+        selectedId = meta.id;
+        pokeTimers.set(meta.id, performance.now());
+        onSelect?.(meta.id);
+        return;
+      }
+    }
+  });
+
+  canvas.addEventListener(
+    "wheel",
+    (ev) => {
+      ev.preventDefault();
+      userMoved = true;
+      const factor = ev.deltaY > 0 ? 0.9 : 1.1;
+      camGoal = clampCamera({ x: camGoal.x, y: camGoal.y, zoom: camGoal.zoom * factor });
+    },
+    { passive: false }
+  );
 
   function triggerPacket(fromId, toId, colorHex = "#f59e0b") {
     const fromPt = fromId === "owner" ? { x: 144, y: 126 } : COWORKER_LOOK[fromId];
@@ -265,38 +365,29 @@ export function createOffice2DScene({ canvas, roster, onSelect }) {
   }
 
   function focusDesk(id) {
-    if (COWORKER_LOOK[id]) {
-      selectedId = id;
-      pokeTimers.set(id, performance.now());
-    }
+    const look = COWORKER_LOOK[id];
+    if (!look) return;
+    selectedId = id;
+    pokeTimers.set(id, performance.now());
+    userMoved = true;
+    const minZoom = viewW < 760 ? 1.85 : Math.max(1.15, camGoal.zoom);
+    camGoal = clampCamera({ x: look.x, y: look.y - 24, zoom: Math.max(camGoal.zoom, minZoom) });
+  }
+
+  function zoomBy(factor) {
+    userMoved = true;
+    camGoal = clampCamera({ x: camGoal.x, y: camGoal.y, zoom: camGoal.zoom * factor });
+  }
+
+  function fitView() {
+    userMoved = true;
+    camGoal = { x: WORLD_W / 2, y: WORLD_H / 2, zoom: 1.0 };
   }
 
   function resetCamera() {
-    resize();
+    userMoved = false;
+    applyDefaultView(true);
   }
-
-  canvas.addEventListener("click", (ev) => {
-    const rect = canvas.getBoundingClientRect();
-    const wx = (ev.clientX - rect.left - transform.offX) / transform.scale;
-    const wy = (ev.clientY - rect.top - transform.offY) / transform.scale;
-
-    // Paper star interaction on lounge table
-    if (Math.hypot(wx - 210, wy - 498) <= 22) {
-      starSpring = 1;
-      return;
-    }
-
-    for (const meta of roster) {
-      const look = COWORKER_LOOK[meta.id];
-      if (!look) continue;
-      if (Math.abs(wx - look.x) <= 44 && Math.abs(wy - look.y) <= 42) {
-        selectedId = meta.id;
-        pokeTimers.set(meta.id, performance.now());
-        onSelect?.(meta.id);
-        return;
-      }
-    }
-  });
 
   function latestBubbleFor(id) {
     const msgs = stateSnapshot.chat || [];
@@ -311,10 +402,16 @@ export function createOffice2DScene({ canvas, roster, onSelect }) {
 
   function drawScene(nowMs) {
     const t = nowMs * 0.001;
-    ctx.clearRect(0, 0, transform.width, transform.height);
+    cam.x += (camGoal.x - cam.x) * 0.14;
+    cam.y += (camGoal.y - cam.y) * 0.14;
+    cam.zoom += (camGoal.zoom - cam.zoom) * 0.14;
+
+    const totalScale = baseScale * cam.zoom;
+    ctx.clearRect(0, 0, viewW, viewH);
     ctx.save();
-    ctx.translate(transform.offX, transform.offY);
-    ctx.scale(transform.scale, transform.scale);
+    ctx.translate(viewW / 2, viewH / 2);
+    ctx.scale(totalScale, totalScale);
+    ctx.translate(-cam.x, -cam.y);
 
     // Outer architectural office wall
     pxRect(ctx, 0, 0, WORLD_W, WORLD_H, "#3b312a");
@@ -340,7 +437,7 @@ export function createOffice2DScene({ canvas, roster, onSelect }) {
     // 5. Bottom-Right Research Library & Server Rack
     pxRect(ctx, 508, 428, 444, 124, "#9295b4");
 
-    // Doorways across dark inner walls
+    // Doorways
     pxRect(ctx, 118, 134, 52, 12, "#d7c5a5");
     pxRect(ctx, 118, 122, 52, 14, "#cbb794");
     ctx.font = "700 8px 'JetBrains Mono', monospace";
@@ -352,12 +449,11 @@ export function createOffice2DScene({ canvas, roster, onSelect }) {
     pxRect(ctx, 312, 418, 52, 12, "#a3b89b");
     pxRect(ctx, 676, 166, 12, 46, "#8e93b2");
 
-    // Windows along top wall
     for (const wx of [44, 160, 290, 420, 560, 720, 816]) {
       drawWindow(ctx, wx, 14);
     }
 
-    // Reception props: corkboard, coat rack, water cooler, plants
+    // Reception props
     pxRect(ctx, 250, 46, 56, 36, "#8c5a2b");
     pxRect(ctx, 254, 50, 48, 28, "#d4a373");
     pxRect(ctx, 258, 54, 10, 8, "#fde047");
@@ -380,7 +476,7 @@ export function createOffice2DScene({ canvas, roster, onSelect }) {
     drawPlant(ctx, 712, 362);
     drawPlant(ctx, 926, 342);
 
-    // Main Floor props: SHIP IT poster, SPRINT Kanban board, rolling whiteboard, clocks
+    // Main Floor props
     pxRect(ctx, 24, 176, 70, 46, "#f8fafc");
     pxRect(ctx, 26, 178, 66, 42, "#f1f5f9");
     ctx.font = "700 10px 'JetBrains Mono', monospace";
@@ -389,7 +485,6 @@ export function createOffice2DScene({ canvas, roster, onSelect }) {
     ctx.font = "500 8.5px Inter, sans-serif";
     ctx.fillText("everyday", 59, 208);
 
-    // SPRINT Kanban Board
     pxRect(ctx, 144, 150, 84, 52, "#e2e8f0");
     pxRect(ctx, 144, 150, 84, 12, "#6366f1");
     ctx.font = "700 8px 'JetBrains Mono', monospace";
@@ -403,7 +498,6 @@ export function createOffice2DScene({ canvas, roster, onSelect }) {
     pxRect(ctx, 202, 174, 18, 10, "#86efac");
     pxRect(ctx, 176, 188, 18, 8, "#93c5fd");
 
-    // Floor section subtitles
     ctx.font = "700 8px 'JetBrains Mono', monospace";
     ctx.fillStyle = "#8d7b63";
     ctx.fillText("COMMAND & PEER MESH", 435, 166);
@@ -411,7 +505,6 @@ export function createOffice2DScene({ canvas, roster, onSelect }) {
     ctx.fillText("RESEARCH", 740, 444);
     ctx.fillText("LOUNGE", 142, 442);
 
-    // Rolling Whiteboard on right of Main Floor
     pxRect(ctx, 592, 312, 66, 44, "#94a3b8");
     pxRect(ctx, 595, 315, 60, 38, "#f8fafc");
     pxRect(ctx, 602, 323, 30, 3, "#3b82f6");
@@ -429,7 +522,6 @@ export function createOffice2DScene({ canvas, roster, onSelect }) {
       pxRect(ctx, cx - 8, 108, 16, 12, "#475569");
       pxRect(ctx, cx - 8, 190, 16, 12, "#475569");
     }
-    // Meeting lounge couch + round table
     pxRect(ctx, 754, 290, 108, 32, "#9a5b3c");
     pxRect(ctx, 762, 298, 92, 20, "#b46e4b");
     ctx.beginPath();
@@ -437,15 +529,13 @@ export function createOffice2DScene({ canvas, roster, onSelect }) {
     ctx.fillStyle = "#c4884d";
     ctx.fill();
 
-    // Cafe Lounge Furniture (Coffee machine, sofa, round table + star, sleeping cat, WC)
+    // Cafe Lounge Furniture
     pxRect(ctx, 20, 456, 20, 24, "#1e293b");
     pxRect(ctx, 23, 459, 14, 7, "#ef4444");
     pxRect(ctx, 44, 462, 12, 16, "#e0f2fe");
-
     pxRect(ctx, 74, 444, 96, 28, "#8c5a3b");
     pxRect(ctx, 82, 450, 80, 16, "#a46d49");
 
-    // Round table + interactive Paper Star
     ctx.beginPath();
     ctx.arc(210, 498, 25, 0, Math.PI * 2);
     ctx.fillStyle = "#c4884d";
@@ -468,12 +558,10 @@ export function createOffice2DScene({ canvas, roster, onSelect }) {
     ctx.fill();
     ctx.restore();
 
-    // Sleeping pixel gray cat
     pxRect(ctx, 134, 514, 18, 10, "#94a3b8");
     pxRect(ctx, 148, 512, 8, 8, "#94a3b8");
     pxRect(ctx, 126, 518, 9, 4, "#64748b");
 
-    // Mini WC nook
     pxRect(ctx, 374, 452, 104, 82, "#d1d5db");
     pxRect(ctx, 378, 456, 96, 74, "#e2e8f0");
     pxRect(ctx, 434, 464, 24, 14, "#f8fafc");
@@ -481,7 +569,7 @@ export function createOffice2DScene({ canvas, roster, onSelect }) {
     ctx.fillStyle = "#64748b";
     ctx.fillText("WC", 424, 488);
 
-    // Research Library: Bookshelves, Printer, Phone booth, Server rack
+    // Research Library
     for (const bx of [522, 686, 800]) {
       pxRect(ctx, bx, 452, 84, 34, "#8c5a2b");
       pxRect(ctx, bx + 4, 456, 76, 11, "#6d4c3d");
@@ -498,13 +586,12 @@ export function createOffice2DScene({ canvas, roster, onSelect }) {
     ctx.fillText("PHONE", 867, 496);
     pxRect(ctx, 860, 504, 14, 18, "#334155");
 
-    // Blinking server rack
     pxRect(ctx, 900, 444, 36, 74, "#0f172a");
     for (let i = 0; i < 6; i++) {
       pxRect(ctx, 906, 452 + i * 11, 24, 4, Math.sin(t * 4 + i) > 0 ? "#22c55e" : "#38bdf8");
     }
 
-    // Subtle P2P mesh lines between active coworkers
+    // P2P Mesh dashed floor lines
     ctx.save();
     ctx.setLineDash([5, 6]);
     ctx.lineDashOffset = -t * 14;
@@ -522,7 +609,6 @@ export function createOffice2DScene({ canvas, roster, onSelect }) {
     }
     ctx.restore();
 
-    // Draw Commander Desk (Reception) & Worker Desks
     drawCounterDesk(ctx, 144, 62);
     for (const id of ["muse-1", "muse-4", "muse-5"]) {
       const look = COWORKER_LOOK[id];
@@ -532,7 +618,6 @@ export function createOffice2DScene({ canvas, roster, onSelect }) {
       drawDesk(ctx, look.x, look.y - 34, meta?.color || "#38bdf8", st !== "standby");
     }
 
-    // Draw all 6 pixel coworkers + badges + speech bubbles
     for (const meta of roster) {
       const look = COWORKER_LOOK[meta.id];
       if (!look) continue;
@@ -560,7 +645,6 @@ export function createOffice2DScene({ canvas, roster, onSelect }) {
       }
     }
 
-    // Animated pixel mail envelopes for live messages
     for (let i = packets.length - 1; i >= 0; i--) {
       const p = packets[i];
       p.t += 0.015 * p.speed;
@@ -592,6 +676,8 @@ export function createOffice2DScene({ canvas, roster, onSelect }) {
 
   return {
     focusDesk,
+    fitView,
+    zoomBy,
     resetCamera,
     resize,
     triggerPacket,

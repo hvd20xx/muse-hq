@@ -11,8 +11,28 @@
 </head>
 <body>
   <div id="app">
+    <header class="mobile-topbar">
+      <div class="mobile-brand">
+        <span class="mobile-mark">HQ</span>
+        <div>
+          <strong>Muse Fleet HQ</strong>
+          <span id="mobile-sub" class="mobile-sub">Drag floor · Tap coworker</span>
+        </div>
+      </div>
+      <div class="mobile-actions">
+        <button id="btn-refresh-mob" class="bar-btn" title="Sync">↻ Sync</button>
+        <button id="btn-connect-mob" class="bar-btn bar-btn-mode demo">DEMO</button>
+      </div>
+    </header>
+
     <main class="office-stage">
       <canvas id="office-canvas" aria-label="Muse Fleet Virtual Office"></canvas>
+
+      <div class="canvas-zoom-controls">
+        <button id="btn-zoom-in" class="zoom-btn" title="Zoom in">+</button>
+        <button id="btn-zoom-out" class="zoom-btn" title="Zoom out">−</button>
+        <button id="btn-zoom-fit" class="zoom-btn zoom-fit" title="Fit whole office">Fit</button>
+      </div>
 
       <div class="top-right-tools">
         <button id="btn-toggle-panel" class="floating-icon-btn" title="Open Office Chat &amp; Roster">
@@ -44,14 +64,15 @@
       </div>
 
       <div class="panel-tabs" role="tablist">
-        <button class="tab-btn active" data-tab="chat" role="tab" aria-selected="true">Office Chat</button>
-        <button class="tab-btn" data-tab="feed" role="tab" aria-selected="false">Orders/Acks</button>
-        <button class="tab-btn" data-tab="inspector" role="tab" aria-selected="false">Inspector</button>
+        <button class="tab-btn active" data-tab="chat" role="tab" aria-selected="true">Chat</button>
+        <button class="tab-btn" data-tab="crew" role="tab" aria-selected="false">Crew</button>
+        <button class="tab-btn" data-tab="feed" role="tab" aria-selected="false">Orders</button>
+        <button class="tab-btn" data-tab="inspector" role="tab" aria-selected="false">Info</button>
       </div>
 
       <section id="tab-chat" class="tab-pane active">
         <div id="demo-banner" class="info-banner">
-          <span>Mode Demo aktif. Klik tombol status di pojok kanan bawah untuk tempel PAT repo privat <code>hvd20xx/muse-fleet-bus</code>.</span>
+          <span>Mode Demo aktif. Klik badge <strong>DEMO</strong> untuk tempel PAT repo privat <code>hvd20xx/muse-fleet-bus</code>.</span>
         </div>
 
         <div id="chat-list" class="chat-list"></div>
@@ -75,12 +96,18 @@
             <button type="button" class="preset-btn" data-msg="Sync status terbaru di chat & update heartbeat masing-masing.">Sync Status</button>
             <button type="button" class="preset-btn" data-msg="Share update make.fun & hasil qa_gate.sh kalian di room ini.">Share Bench</button>
           </div>
-          <textarea id="cmd-input" rows="2" placeholder="Ketik pesan grup ke semua Muse atau @muse tertentu..."></textarea>
-          <div class="send-footer">
-            <span id="cmd-status" class="status-hint">Posting as: Owner</span>
+          <div class="composer-input-row">
+            <textarea id="cmd-input" rows="2" placeholder="Ketik pesan ke semua Muse atau @Muse tertentu..."></textarea>
             <button id="btn-send" type="button" class="btn btn-primary">Send</button>
           </div>
+          <div class="send-footer">
+            <span id="cmd-status" class="status-hint">Posting as: Owner</span>
+          </div>
         </div>
+      </section>
+
+      <section id="tab-crew" class="tab-pane">
+        <div id="crew-list" class="crew-list"></div>
       </section>
 
       <section id="tab-feed" class="tab-pane">

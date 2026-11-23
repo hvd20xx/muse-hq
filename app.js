@@ -24,13 +24,19 @@ const els = {
   clockNow: document.getElementById("clock-now"),
   rosterPills: document.getElementById("roster-pills"),
   btnRefresh: document.getElementById("btn-refresh"),
+  btnRefreshMob: document.getElementById("btn-refresh-mob"),
   btnConnect: document.getElementById("btn-connect"),
+  btnConnectMob: document.getElementById("btn-connect-mob"),
+  btnZoomIn: document.getElementById("btn-zoom-in"),
+  btnZoomOut: document.getElementById("btn-zoom-out"),
+  btnZoomFit: document.getElementById("btn-zoom-fit"),
   btnTogglePanel: document.getElementById("btn-toggle-panel"),
   btnCloseDrawer: document.getElementById("btn-close-drawer"),
   chatCountPill: document.getElementById("chat-count-pill"),
   panel: document.getElementById("hq-panel"),
   demoBanner: document.getElementById("demo-banner"),
   chatList: document.getElementById("chat-list"),
+  crewList: document.getElementById("crew-list"),
   targetChips: document.getElementById("target-chips"),
   chkOrder: document.getElementById("chk-order"),
   cmdInput: document.getElementById("cmd-input"),
@@ -69,6 +75,13 @@ function shortTime(iso) {
   return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
+function displayName(id) {
+  if (id === "owner") return "OWNER";
+  if (id === "all") return "ALL";
+  const m = ROSTER_BY_ID[id];
+  return m ? `Muse-${m.name}` : id;
+}
+
 function openDrawer(tabName = null) {
   els.panel.classList.remove("collapsed");
   els.panel.setAttribute("aria-hidden", "false");
@@ -85,6 +98,7 @@ const office = createOffice2DScene({
   roster: ROSTER,
   onSelect: (id) => {
     selectedDesk = id;
+    office.focusDesk(id);
     renderAll();
     openDrawer("inspector");
   },
@@ -99,13 +113,6 @@ function activateTab(tabName) {
   document.querySelectorAll(".tab-pane").forEach((pane) => {
     pane.classList.toggle("active", pane.id === `tab-${tabName}`);
   });
-}
-
-function displayName(id) {
-  if (id === "owner") return "OWNER";
-  if (id === "all") return "ALL";
-  const m = ROSTER_BY_ID[id];
-  return m ? `Muse-${m.name}` : id;
 }
 
 function senderColor(fromId) {
@@ -123,6 +130,8 @@ function renderStatusBar() {
   const isLive = state.mode === "live";
   els.btnConnect.textContent = isLive ? "LIVE BUS" : "DEMO PREVIEW";
   els.btnConnect.className = `bar-btn bar-btn-mode ${isLive ? "live" : "demo"}`;
+  els.btnConnectMob.textContent = isLive ? "LIVE" : "DEMO";
+  els.btnConnectMob.className = `bar-btn bar-btn-mode ${isLive ? "live" : "demo"}`;
   els.demoBanner.classList.toggle("hidden", isLive);
   els.chatCountPill.textContent = String(state.chat?.length || 0);
 
@@ -150,6 +159,60 @@ function renderStatusBar() {
       selectedDesk = btn.dataset.pick;
       office.focusDesk(selectedDesk);
       renderAll();
+    });
+  });
+}
+
+function renderCrew() {
+  els.crewList.innerHTML = ROSTER.map((m) => {
+    const hb = state.heartbeats?.[m.id] || {};
+    const status = hb.status || (m.role === "STANDBY" ? "standby" : "online");
+    const col = STATUS_DOT[status] || "#0ea5e9";
+    const sel = m.id === selectedDesk ? "selected" : "";
+    return `
+      <div class="crew-card ${sel}" style="--crew-color:${m.color}" data-crew="${esc(m.id)}">
+        <div class="crew-top">
+          <div class="crew-title">
+            <i class="dot" style="background:${col}"></i>
+            <span>${esc(displayName(m.id))}${m.role === "COMMANDER" ? " ★" : ""}</span>
+          </div>
+          <span class="crew-meta">${esc(status.toUpperCase())} · ${esc(hb.balance || "$0.00")}</span>
+        </div>
+        <div class="crew-task">${esc(hb.task || m.subtitle)}</div>
+        <div class="crew-actions">
+          <span class="crew-meta">${esc(hb.updated_at ? shortTime(hb.updated_at) : "sync")}</span>
+          <div>
+            <button type="button" class="mini-btn" data-focus="${esc(m.id)}">Locate</button>
+            <button type="button" class="mini-btn" data-chat="${esc(m.id)}">@Chat</button>
+          </div>
+        </div>
+      </div>`;
+  }).join("");
+
+  els.crewList.querySelectorAll("[data-focus]").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      selectedDesk = btn.dataset.focus;
+      office.focusDesk(selectedDesk);
+      renderAll();
+    });
+  });
+
+  els.crewList.querySelectorAll("[data-chat]").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      setTarget(btn.dataset.chat);
+      activateTab("chat");
+      els.cmdInput.focus();
+    });
+  });
+
+  els.crewList.querySelectorAll("[data-crew]").forEach((card) => {
+    card.addEventListener("click", () => {
+      selectedDesk = card.dataset.crew;
+      office.focusDesk(selectedDesk);
+      renderAll();
+      activateTab("inspector");
     });
   });
 }
@@ -262,6 +325,7 @@ function renderInspector() {
 function renderAll() {
   office.updateState(state);
   renderStatusBar();
+  renderCrew();
   renderChat();
   renderFeed();
   renderInspector();
@@ -292,7 +356,9 @@ async function syncNow() {
     return;
   }
   els.btnRefresh.disabled = true;
+  els.btnRefreshMob.disabled = true;
   els.btnRefresh.textContent = "↻ ...";
+  els.btnRefreshMob.textContent = "↻ ...";
   try {
     state = await fetchBusState(cfg);
     animateNewChat(state.chat);
@@ -301,7 +367,9 @@ async function syncNow() {
     els.cmdStatus.textContent = `Sync error: ${err.message}`;
   } finally {
     els.btnRefresh.disabled = false;
+    els.btnRefreshMob.disabled = false;
     els.btnRefresh.textContent = "↻ Sync";
+    els.btnRefreshMob.textContent = "↻ Sync";
   }
 }
 
@@ -359,14 +427,14 @@ async function handleSend() {
       seenChatIds.add(msg.id);
       office.triggerPacket("owner", selectedTarget, "#e11d48");
       els.cmdInput.value = "";
-      els.cmdStatus.textContent = `Demo → ${selectedTarget}`;
+      els.cmdStatus.textContent = `Demo → ${displayName(selectedTarget)}`;
       renderAll();
     } else {
       const msg = await sendChatMessage(cfg, { from: "owner", to: selectedTarget, text, alsoOrder });
       seenChatIds.add(msg.id);
       office.triggerPacket("owner", selectedTarget, "#e11d48");
       els.cmdInput.value = "";
-      els.cmdStatus.textContent = `Sent → ${selectedTarget}`;
+      els.cmdStatus.textContent = `Sent → ${displayName(selectedTarget)}`;
       await syncNow();
     }
   } catch (err) {
@@ -386,6 +454,11 @@ els.cmdInput.addEventListener("keydown", (e) => {
 });
 
 els.btnRefresh.addEventListener("click", syncNow);
+els.btnRefreshMob.addEventListener("click", syncNow);
+els.btnZoomIn.addEventListener("click", () => office.zoomBy(1.22));
+els.btnZoomOut.addEventListener("click", () => office.zoomBy(0.82));
+els.btnZoomFit.addEventListener("click", () => office.fitView());
+
 els.btnTogglePanel.addEventListener("click", () => {
   if (els.panel.classList.contains("collapsed")) {
     openDrawer();
@@ -408,6 +481,7 @@ function closeModal() {
 }
 
 els.btnConnect.addEventListener("click", openModal);
+els.btnConnectMob.addEventListener("click", openModal);
 els.btnCloseModal.addEventListener("click", closeModal);
 els.modal.querySelector(".modal-backdrop").addEventListener("click", closeModal);
 window.addEventListener("keydown", (e) => {
