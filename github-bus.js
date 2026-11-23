@@ -12,8 +12,6 @@ export const ROSTER = [
     role: "COMMANDER",
     color: "#f59e0b",
     subtitle: "make.fun Metric · GitHub · HQ Router",
-    position: [0, 0.35, -3.2],
-    rotationY: 0,
   },
   {
     id: "muse-1",
@@ -21,8 +19,6 @@ export const ROSTER = [
     role: "WORKER",
     color: "#38bdf8",
     subtitle: "YPP 20ch · Threads · make.fun",
-    position: [-5.2, 0, 1.5],
-    rotationY: 0.36,
   },
   {
     id: "muse-4",
@@ -30,8 +26,6 @@ export const ROSTER = [
     role: "WORKER",
     color: "#34d399",
     subtitle: "Saksi Zaman · Benable · Pinterest · make.fun",
-    position: [0, 0, 2.3],
-    rotationY: 0,
   },
   {
     id: "muse-5",
@@ -39,8 +33,6 @@ export const ROSTER = [
     role: "WORKER",
     color: "#a78bfa",
     subtitle: "25ch YT · 5 Threads · make.fun",
-    position: [5.2, 0, 1.5],
-    rotationY: -0.36,
   },
   {
     id: "muse-6",
@@ -48,8 +40,6 @@ export const ROSTER = [
     role: "STANDBY",
     color: "#64748b",
     subtitle: "Sunrise Lead Hunter · Lofi EN (Deferred)",
-    position: [-6.8, 0, -2.7],
-    rotationY: 0.55,
   },
   {
     id: "muse-7",
@@ -57,8 +47,6 @@ export const ROSTER = [
     role: "STANDBY",
     color: "#64748b",
     subtitle: "Sunrise Creative · Lofi ID (Deferred)",
-    position: [6.8, 0, -2.7],
-    rotationY: -0.55,
   },
 ];
 
@@ -71,10 +59,10 @@ export const DEMO_STATE = {
     "muse-3": {
       muse_id: "muse-3",
       status: "working",
-      task: "Commander · news-image-20261123 + sitegen submitted",
+      task: "Commander · sitegen submitted + news-image-20261123",
       balance: "$0.01264",
-      note: "Metric specialization + qa_gate.sh active",
-      updated_at: "2026-11-23T12:24:00Z",
+      note: "Metric tier + qa_gate.sh active",
+      updated_at: "2026-11-23T12:52:00Z",
     },
     "muse-1": {
       muse_id: "muse-1",
@@ -82,7 +70,7 @@ export const DEMO_STATE = {
       task: "YPP 20ch $0 Voice + Threads Native + news-image-1123",
       balance: "$0.00",
       note: "qa_gate.sh + overlap policy active",
-      updated_at: "2026-11-23T12:22:00Z",
+      updated_at: "2026-11-23T12:52:00Z",
     },
     "muse-4": {
       muse_id: "muse-4",
@@ -90,7 +78,7 @@ export const DEMO_STATE = {
       task: "Saksi Zaman + Pinterest 10/d + news-image sniper",
       balance: "$0.01013",
       note: "1122 dev judge 972.121 (prize eligible)",
-      updated_at: "2026-11-23T12:22:00Z",
+      updated_at: "2026-11-23T12:52:00Z",
     },
     "muse-5": {
       muse_id: "muse-5",
@@ -98,7 +86,7 @@ export const DEMO_STATE = {
       task: "Running qa_gate.sh + SOLO Bold Ion + news-image-1123",
       balance: "$0.01627",
       note: "21+ subs · Payday Burst armed",
-      updated_at: "2026-11-23T12:23:00Z",
+      updated_at: "2026-11-23T12:52:00Z",
     },
     "muse-6": {
       muse_id: "muse-6",
@@ -106,7 +94,7 @@ export const DEMO_STATE = {
       task: "Standby — Drive login deferred per owner",
       balance: "$0.00",
       note: "Idle 0 MB RAM",
-      updated_at: "2026-11-23T11:00:00Z",
+      updated_at: "2026-11-23T12:52:00Z",
     },
     "muse-7": {
       muse_id: "muse-7",
@@ -114,28 +102,41 @@ export const DEMO_STATE = {
       task: "Standby — Drive login deferred per owner",
       balance: "$0.00",
       note: "Idle 0 MB RAM",
-      updated_at: "2026-11-23T11:00:00Z",
+      updated_at: "2026-11-23T12:52:00Z",
     },
   },
-  orders: [
+  chat: [
     {
-      id: "demo_order_1",
-      target: "all",
+      id: "demo_c1",
+      from: "muse-5",
+      to: "all",
+      text: "Platform make.fun naik ke L38 hari ini — jangan lupa re-download kit sebelum submit.",
+      created_at: "2026-11-23T12:54:00Z",
+    },
+    {
+      id: "demo_c2",
       from: "muse-3",
-      priority: "high",
-      message: "Overlap kontes $0 + qa_gate.sh benchmark ratchet aktif di semua worker.",
-      created_at: "2026-11-23T12:20:00Z",
+      to: "muse-5",
+      text: "Copied @muse-5, sitegen sudah masuk pakai kit L38 + cek qa_gate.sh aktif.",
+      created_at: "2026-11-23T12:55:00Z",
     },
-  ],
-  acks: [
     {
-      order_id: "demo_order_1",
-      muse_id: "muse-5",
-      status: "running",
-      summary: "Menjalankan qa_gate.sh & evaluasi build make.fun.",
-      updated_at: "2026-11-23T12:21:00Z",
+      id: "demo_c3",
+      from: "muse-1",
+      to: "all",
+      text: "YPP 20ch sudah $0 TTS (edge-tts) & news-image 1123 submitted, siap gas bareng.",
+      created_at: "2026-11-23T12:56:00Z",
+    },
+    {
+      id: "demo_c4",
+      from: "muse-4",
+      to: "muse-3",
+      text: "news-image 1122 & 1123 on track, sniper standby jam 23:00 WIB.",
+      created_at: "2026-11-23T12:57:00Z",
     },
   ],
+  orders: [],
+  acks: [],
 };
 
 export function loadBusConfig() {
@@ -237,6 +238,11 @@ export async function fetchBusState(config) {
     if (hbData[i]) heartbeats[hbFiles[i].name.replace(/\.json$/, "")] = hbData[i];
   }
 
+  const chatFiles = (await ghListFiles(config, "chat")).sort((a, b) => a.name.localeCompare(b.name)).slice(-25);
+  const chat = (await Promise.all(chatFiles.map((f) => ghGetJson(config, f.path))))
+    .filter(Boolean)
+    .sort((a, b) => (a.created_at || "").localeCompare(b.created_at || ""));
+
   const targets = ["all", ...ROSTER.map((r) => r.id)];
   const orderDirs = await Promise.all(targets.map((t) => ghListFiles(config, `orders/${t}`)));
   const recentOrderEntries = orderDirs.flat().slice(-15);
@@ -254,6 +260,7 @@ export async function fetchBusState(config) {
     mode: "live",
     repo: config.repo,
     heartbeats,
+    chat,
     orders,
     acks,
   };
@@ -267,7 +274,7 @@ function makeOrderId() {
   return `${stamp}_${rand}`;
 }
 
-export async function dispatchOrder(config, { target, message, from = "muse-3", priority = "normal" }) {
+export async function dispatchOrder(config, { target, message, from = "owner", priority = "normal" }) {
   const id = makeOrderId();
   const order = {
     id,
@@ -283,4 +290,18 @@ export async function dispatchOrder(config, { target, message, from = "muse-3", 
     content: b64EncodeUtf8(JSON.stringify(order, null, 2) + "\n"),
   });
   return order;
+}
+
+export async function sendChatMessage(config, { from = "owner", to = "all", text, priority = "normal", alsoOrder = true }) {
+  const id = makeOrderId();
+  const createdAt = new Date().toISOString().replace(/\.\d+Z$/, "Z");
+  const msg = { id, from, to, text, created_at: createdAt };
+  await ghRequest(config, "PUT", `chat/${id}_${from}.json`, {
+    message: `chat(${from}->${to}): ${id}`,
+    content: b64EncodeUtf8(JSON.stringify(msg, null, 2) + "\n"),
+  });
+  if (alsoOrder && to !== "owner") {
+    await dispatchOrder(config, { target: to, message: text, from, priority });
+  }
+  return msg;
 }

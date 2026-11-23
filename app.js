@@ -1,4 +1,4 @@
-import { createOfficeScene } from "./office3d.js";
+import { createOffice2DScene } from "./office2d.js";
 import {
   ROSTER,
   ROSTER_BY_ID,
@@ -8,26 +8,25 @@ import {
   clearBusConfig,
   verifyBusConnection,
   fetchBusState,
-  dispatchOrder,
+  sendChatMessage,
 } from "./github-bus.js";
 
 const els = {
   canvas: document.getElementById("office-canvas"),
-  nameplateLayer: document.getElementById("nameplates-layer"),
   modeBadge: document.getElementById("mode-badge"),
   metricActive: document.getElementById("metric-active"),
+  metricChat: document.getElementById("metric-chat"),
   metricOrders: document.getElementById("metric-orders"),
-  metricAcks: document.getElementById("metric-acks"),
   metricSync: document.getElementById("metric-sync"),
   btnRefresh: document.getElementById("btn-refresh"),
-  btnResetCam: document.getElementById("btn-reset-cam"),
   btnTogglePanel: document.getElementById("btn-toggle-panel"),
   btnConnect: document.getElementById("btn-connect"),
   panel: document.getElementById("hq-panel"),
   demoBanner: document.getElementById("demo-banner"),
+  chatList: document.getElementById("chat-list"),
   targetChips: document.getElementById("target-chips"),
+  chkOrder: document.getElementById("chk-order"),
   cmdInput: document.getElementById("cmd-input"),
-  cmdPriority: document.getElementById("cmd-priority"),
   cmdStatus: document.getElementById("cmd-status"),
   btnSend: document.getElementById("btn-send"),
   feedList: document.getElementById("feed-list"),
@@ -46,6 +45,7 @@ let selectedDesk = "muse-3";
 let selectedTarget = "all";
 let feedFilter = "all";
 let pollTimer = null;
+const seenChatIds = new Set();
 
 function esc(str) {
   return String(str ?? "")
@@ -62,9 +62,8 @@ function shortTime(iso) {
   return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
-const office = createOfficeScene({
+const office = createOffice2DScene({
   canvas: els.canvas,
-  nameplateLayer: els.nameplateLayer,
   roster: ROSTER,
   onSelect: (id) => {
     selectedDesk = id;
@@ -84,6 +83,17 @@ function activateTab(tabName) {
   });
 }
 
+function senderColor(fromId) {
+  if (fromId === "owner") return "#f43f5e";
+  return ROSTER_BY_ID[fromId]?.color || "#38bdf8";
+}
+
+function senderLabel(fromId) {
+  if (fromId === "owner") return "OWNER";
+  const m = ROSTER_BY_ID[fromId];
+  return m ? `${m.id} · ${m.name}` : fromId;
+}
+
 function renderMetrics() {
   const isLive = state.mode === "live";
   els.modeBadge.textContent = isLive ? "LIVE BUS" : "DEMO PREVIEW";
@@ -96,19 +106,37 @@ function renderMetrics() {
     return s !== "standby";
   }).length;
   els.metricActive.textContent = `${activeCount}/${ROSTER.length}`;
-  els.metricOrders.textContent = String(state.orders?.length || 0);
-  els.metricAcks.textContent = String(state.acks?.length || 0);
+  els.metricChat.textContent = String(state.chat?.length || 0);
+  els.metricOrders.textContent = `${state.orders?.length || 0}/${state.acks?.length || 0}`;
   els.metricSync.textContent = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
+function renderChat() {
+  const msgs = state.chat || [];
+  if (msgs.length === 0) {
+    els.chatList.innerHTML = `<div class="chat-msg"><div class="chat-text">Belum ada pesan di Office Chat. Kirim pesan pertama di bawah!</div></div>`;
+    return;
+  }
+  els.chatList.innerHTML = msgs
+    .map((m) => {
+      const col = senderColor(m.from);
+      return `
+        <div class="chat-msg" style="--sender-color: ${col}">
+          <div class="chat-msg-head">
+            <span class="chat-sender">${esc(senderLabel(m.from))} → ${esc(m.to)}</span>
+            <span class="chat-time">${esc(shortTime(m.created_at))}</span>
+          </div>
+          <div class="chat-text">${esc(m.text)}</div>
+        </div>`;
+    })
+    .join("");
+  els.chatList.scrollTop = els.chatList.scrollHeight;
 }
 
 function renderFeed() {
   const items = [];
-  for (const o of state.orders || []) {
-    items.push({ kind: "order", ts: o.created_at || "", item: o });
-  }
-  for (const a of state.acks || []) {
-    items.push({ kind: "ack", ts: a.updated_at || "", item: a });
-  }
+  for (const o of state.orders || []) items.push({ kind: "order", ts: o.created_at || "", item: o });
+  for (const a of state.acks || []) items.push({ kind: "ack", ts: a.updated_at || "", item: a });
   items.sort((a, b) => b.ts.localeCompare(a.ts));
 
   const visible = items.filter((x) => feedFilter === "all" || x.kind === feedFilter);
@@ -178,19 +206,20 @@ function renderInspector() {
         <div class="kv-v">${esc(hb.updated_at || "Demo snapshot")}</div>
       </div>
     </div>
-    <button id="btn-inspect-cmd" type="button" class="btn btn-primary">Send Direct Command to ${esc(meta.id)}</button>
+    <button id="btn-inspect-cmd" type="button" class="btn btn-primary">Message ${esc(meta.id)} in Chat</button>
   `;
 
   document.getElementById("btn-inspect-cmd")?.addEventListener("click", () => {
     setTarget(meta.id);
-    activateTab("command");
+    activateTab("chat");
     els.cmdInput.focus();
   });
 }
 
 function renderAll() {
-  office.updateStationVisuals(state.heartbeats);
+  office.updateState(state);
   renderMetrics();
+  renderChat();
   renderFeed();
   renderInspector();
 }
@@ -202,10 +231,20 @@ function setTarget(target) {
   });
 }
 
+function animateNewChat(msgs) {
+  for (const m of msgs || []) {
+    if (!seenChatIds.has(m.id)) {
+      seenChatIds.add(m.id);
+      office.triggerPacket(m.from || "owner", m.to || "all", senderColor(m.from));
+    }
+  }
+}
+
 async function syncNow() {
   const cfg = loadBusConfig();
   if (!cfg.pat) {
     state = structuredClone(DEMO_STATE);
+    animateNewChat(state.chat);
     renderAll();
     return;
   }
@@ -213,6 +252,7 @@ async function syncNow() {
   els.btnRefresh.textContent = "Syncing...";
   try {
     state = await fetchBusState(cfg);
+    animateNewChat(state.chat);
     renderAll();
   } catch (err) {
     els.cmdStatus.textContent = `Sync error: ${err.message}`;
@@ -229,7 +269,6 @@ function startPolling() {
   }, 30000);
 }
 
-// Event bindings
 document.querySelectorAll(".tab-btn").forEach((btn) => {
   btn.addEventListener("click", () => activateTab(btn.dataset.tab));
 });
@@ -253,52 +292,60 @@ document.querySelectorAll("[data-feed]").forEach((btn) => {
   });
 });
 
-els.btnSend.addEventListener("click", async () => {
-  const message = els.cmdInput.value.trim();
-  if (!message) {
-    els.cmdStatus.textContent = "Isi pesan perintah dulu.";
+async function handleSend() {
+  const text = els.cmdInput.value.trim();
+  if (!text) {
+    els.cmdStatus.textContent = "Isi pesan dulu.";
     return;
   }
-  const priority = els.cmdPriority.checked ? "high" : "normal";
+  const alsoOrder = els.chkOrder.checked;
   const cfg = loadBusConfig();
 
   els.btnSend.disabled = true;
   els.btnSend.textContent = "Sending...";
   try {
     if (!cfg.pat) {
-      const demoOrder = {
+      const msg = {
         id: `demo_${Date.now()}`,
-        target: selectedTarget,
-        from: "muse-3",
-        priority,
-        message,
+        from: "owner",
+        to: selectedTarget,
+        text,
         created_at: new Date().toISOString(),
       };
-      state.orders = [demoOrder, ...(state.orders || [])];
-      office.triggerPacket(selectedTarget, priority === "high" ? "#fb7185" : "#fbbf24");
+      state.chat = [...(state.chat || []), msg];
+      seenChatIds.add(msg.id);
+      office.triggerPacket("owner", selectedTarget, "#f43f5e");
       els.cmdInput.value = "";
-      els.cmdStatus.textContent = `Demo order → ${selectedTarget}`;
+      els.cmdStatus.textContent = `Demo chat → ${selectedTarget}`;
       renderAll();
     } else {
-      const order = await dispatchOrder(cfg, { target: selectedTarget, message, priority });
-      office.triggerPacket(selectedTarget, priority === "high" ? "#fb7185" : "#34d399");
+      const msg = await sendChatMessage(cfg, { from: "owner", to: selectedTarget, text, alsoOrder });
+      seenChatIds.add(msg.id);
+      office.triggerPacket("owner", selectedTarget, "#f43f5e");
       els.cmdInput.value = "";
-      els.cmdStatus.textContent = `Dispatched ${order.id} → ${selectedTarget}`;
+      els.cmdStatus.textContent = `Sent → ${selectedTarget}`;
       await syncNow();
     }
   } catch (err) {
     els.cmdStatus.textContent = `Error: ${err.message}`;
   } finally {
     els.btnSend.disabled = false;
-    els.btnSend.textContent = "Dispatch Order";
+    els.btnSend.textContent = "Send Message";
+  }
+}
+
+els.btnSend.addEventListener("click", handleSend);
+els.cmdInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    handleSend();
   }
 });
 
 els.btnRefresh.addEventListener("click", syncNow);
-els.btnResetCam.addEventListener("click", () => office.resetCamera());
 els.btnTogglePanel.addEventListener("click", () => {
   els.panel.classList.toggle("collapsed");
-  setTimeout(() => office.resize(), 240);
+  setTimeout(() => office.resize(), 220);
 });
 
 function openModal() {
@@ -341,7 +388,6 @@ els.btnSaveBus.addEventListener("click", async () => {
     saveBusConfig(repo, pat);
     closeModal();
     await syncNow();
-    office.triggerPacket("all", "#34d399");
   } catch (err) {
     els.modalError.textContent = err.message;
     els.modalError.classList.remove("hidden");

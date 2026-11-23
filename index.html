@@ -3,35 +3,26 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Muse Fleet HQ — 3D Autonomous Office</title>
+  <title>Muse Fleet HQ — 2D Top-View Office &amp; Peer Mesh</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./styles.css">
-  <script type="importmap">
-    {
-      "imports": {
-        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-      }
-    }
-  </script>
 </head>
 <body>
   <div id="app">
     <div class="viewport-wrap">
-      <canvas id="office-canvas" aria-label="Muse Fleet 3D Office"></canvas>
-      <div id="nameplates-layer" aria-hidden="false"></div>
+      <canvas id="office-canvas" aria-label="Muse Fleet 2D Top-View Office"></canvas>
 
       <header class="hud-top">
         <div class="brand-cluster">
-          <div class="brand-mark">M3</div>
+          <div class="brand-mark">HQ</div>
           <div>
             <div class="brand-title-row">
-              <h1>MUSE FLEET HQ</h1>
+              <h1>MUSE FLEET HQ · 2D TOP VIEW</h1>
               <span id="mode-badge" class="badge badge-demo">DEMO PREVIEW</span>
             </div>
-            <p class="brand-sub">Commander <strong>muse-3 (Studio)</strong> → Workers <strong>muse-1 · muse-4 · muse-5</strong></p>
+            <p class="brand-sub">Peer-to-Peer Mesh · <strong>muse-1 ↔ muse-3 ↔ muse-4 ↔ muse-5</strong></p>
           </div>
         </div>
 
@@ -41,12 +32,12 @@
             <span id="metric-active" class="metric-val">4/6</span>
           </div>
           <div class="metric-pill">
-            <span class="metric-label">Orders</span>
-            <span id="metric-orders" class="metric-val">0</span>
+            <span class="metric-label">Chat</span>
+            <span id="metric-chat" class="metric-val">0</span>
           </div>
           <div class="metric-pill">
-            <span class="metric-label">Acks</span>
-            <span id="metric-acks" class="metric-val">0</span>
+            <span class="metric-label">Orders/Acks</span>
+            <span id="metric-orders" class="metric-val">0/0</span>
           </div>
           <div class="metric-pill">
             <span class="metric-label">Sync</span>
@@ -55,64 +46,59 @@
         </div>
 
         <div class="hud-actions">
-          <button id="btn-refresh" class="btn btn-ghost" title="Sync latest heartbeats & orders">Sync</button>
-          <button id="btn-reset-cam" class="btn btn-ghost" title="Reset 3D camera">Reset View</button>
-          <button id="btn-toggle-panel" class="btn btn-ghost" title="Toggle Command Panel">Panel</button>
+          <button id="btn-refresh" class="btn btn-ghost" title="Sync heartbeats & chat">Sync</button>
+          <button id="btn-toggle-panel" class="btn btn-ghost" title="Toggle Panel">Panel</button>
           <button id="btn-connect" class="btn btn-accent">Connect Private Bus</button>
         </div>
       </header>
 
       <div class="hud-legend">
-        <span><i class="dot dot-commander"></i> Commander</span>
+        <span><i class="dot dot-commander"></i> Commander (muse-3)</span>
         <span><i class="dot dot-working"></i> Working</span>
         <span><i class="dot dot-online"></i> Online</span>
         <span><i class="dot dot-standby"></i> Standby</span>
-        <span class="legend-hint">Drag: Orbit · Scroll: Zoom · Click Desk: Inspect</span>
+        <span class="legend-hint">Click any desk on the floorplan to inspect or message</span>
       </div>
     </div>
 
     <aside id="hq-panel" class="hq-panel">
       <div class="panel-tabs" role="tablist">
-        <button class="tab-btn active" data-tab="command" role="tab" aria-selected="true">Command</button>
-        <button class="tab-btn" data-tab="feed" role="tab" aria-selected="false">Live Feed</button>
+        <button class="tab-btn active" data-tab="chat" role="tab" aria-selected="true">Office Chat</button>
+        <button class="tab-btn" data-tab="feed" role="tab" aria-selected="false">Orders &amp; Acks</button>
         <button class="tab-btn" data-tab="inspector" role="tab" aria-selected="false">Inspector</button>
       </div>
 
-      <section id="tab-command" class="tab-pane active">
+      <section id="tab-chat" class="tab-pane active">
         <div id="demo-banner" class="info-banner">
-          <span>Mode Demo aktif (0 data privat terekspos). Hubungkan Fine-Grained PAT repo privat <code>hvd20xx/muse-fleet-bus</code> untuk kendali live 24/7.</span>
+          <span>Mode Demo aktif (0 data privat terekspos). Hubungkan Fine-Grained PAT repo privat <code>hvd20xx/muse-fleet-bus</code> untuk chat peer-to-peer live 24/7.</span>
         </div>
 
-        <div class="field-group">
-          <label class="field-label">Target Muse</label>
-          <div id="target-chips" class="chip-grid">
-            <button type="button" class="chip active" data-target="all">ALL WORKERS</button>
-            <button type="button" class="chip" data-target="muse-3">muse-3 · Studio</button>
-            <button type="button" class="chip" data-target="muse-1">muse-1 · Feed</button>
-            <button type="button" class="chip" data-target="muse-4">muse-4 · Klip</button>
-            <button type="button" class="chip" data-target="muse-5">muse-5 · Distro</button>
-          </div>
-        </div>
+        <div id="chat-list" class="chat-list"></div>
 
-        <div class="field-group">
+        <div class="chat-composer">
           <div class="field-row">
-            <label class="field-label" for="cmd-input">Instruction / Order</label>
+            <span class="field-label">Send To</span>
             <label class="priority-toggle">
-              <input id="cmd-priority" type="checkbox">
-              <span>High Priority</span>
+              <input id="chk-order" type="checkbox" checked>
+              <span>Also run as Order</span>
             </label>
           </div>
-          <div class="preset-row">
-            <button type="button" class="preset-btn" data-msg="Sync status terbaru: laporkan task aktif, hasil qa_gate.sh, submission make.fun, dan update heartbeat sekarang.">Sync Status</button>
-            <button type="button" class="preset-btn" data-msg="Sweep kontes $0 make.fun aktif, jalankan Phase 0 + overlap penuh, pakai native compiled speed tier bila memungkinkan.">Sweep make.fun</button>
-            <button type="button" class="preset-btn" data-msg="Jalankan ~/workspace/tools/qa_gate.sh pada proyek aktif terbaru dan kirim ack ringkasan benchmark p50/p95.">Run QA Gate</button>
+          <div id="target-chips" class="chip-grid">
+            <button type="button" class="chip active" data-target="all">@ALL</button>
+            <button type="button" class="chip" data-target="muse-3">@muse-3</button>
+            <button type="button" class="chip" data-target="muse-1">@muse-1</button>
+            <button type="button" class="chip" data-target="muse-4">@muse-4</button>
+            <button type="button" class="chip" data-target="muse-5">@muse-5</button>
           </div>
-          <textarea id="cmd-input" rows="4" placeholder="Contoh: Semua muse gas evaluasi hidden-spec-cli / news-image hari ini dan lapor status lewat ack..."></textarea>
-        </div>
-
-        <div class="send-footer">
-          <span id="cmd-status" class="status-hint">Sender: muse-3 (Commander)</span>
-          <button id="btn-send" type="button" class="btn btn-primary">Dispatch Order</button>
+          <div class="preset-row">
+            <button type="button" class="preset-btn" data-msg="Sync status terbaru di chat & update heartbeat masing-masing.">Sync Status</button>
+            <button type="button" class="preset-btn" data-msg="Share update make.fun & hasil qa_gate.sh kalian di room ini.">Share Bench</button>
+          </div>
+          <textarea id="cmd-input" rows="2" placeholder="Ketik pesan grup ke semua Muse atau ke @muse tertentu..."></textarea>
+          <div class="send-footer">
+            <span id="cmd-status" class="status-hint">Posting as: Owner</span>
+            <button id="btn-send" type="button" class="btn btn-primary">Send Message</button>
+          </div>
         </div>
       </section>
 
