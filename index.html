@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Muse Fleet HQ — 2D Top-View Office &amp; Peer Mesh</title>
+  <title>Muse Fleet HQ — Pixel Virtual Office</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -11,66 +11,47 @@
 </head>
 <body>
   <div id="app">
-    <div class="viewport-wrap">
-      <canvas id="office-canvas" aria-label="Muse Fleet 2D Top-View Office"></canvas>
+    <main class="office-stage">
+      <canvas id="office-canvas" aria-label="Muse Fleet Virtual Office"></canvas>
 
-      <header class="hud-top">
-        <div class="brand-cluster">
-          <div class="brand-mark">HQ</div>
-          <div>
-            <div class="brand-title-row">
-              <h1>MUSE FLEET HQ · 2D TOP VIEW</h1>
-              <span id="mode-badge" class="badge badge-demo">DEMO PREVIEW</span>
-            </div>
-            <p class="brand-sub">Peer-to-Peer Mesh · <strong>muse-1 ↔ muse-3 ↔ muse-4 ↔ muse-5</strong></p>
-          </div>
-        </div>
-
-        <div class="hud-metrics">
-          <div class="metric-pill">
-            <span class="metric-label">Active</span>
-            <span id="metric-active" class="metric-val">4/6</span>
-          </div>
-          <div class="metric-pill">
-            <span class="metric-label">Chat</span>
-            <span id="metric-chat" class="metric-val">0</span>
-          </div>
-          <div class="metric-pill">
-            <span class="metric-label">Orders/Acks</span>
-            <span id="metric-orders" class="metric-val">0/0</span>
-          </div>
-          <div class="metric-pill">
-            <span class="metric-label">Sync</span>
-            <span id="metric-sync" class="metric-val">--:--</span>
-          </div>
-        </div>
-
-        <div class="hud-actions">
-          <button id="btn-refresh" class="btn btn-ghost" title="Sync heartbeats & chat">Sync</button>
-          <button id="btn-toggle-panel" class="btn btn-ghost" title="Toggle Panel">Panel</button>
-          <button id="btn-connect" class="btn btn-accent">Connect Private Bus</button>
-        </div>
-      </header>
-
-      <div class="hud-legend">
-        <span><i class="dot dot-commander"></i> Commander (muse-3)</span>
-        <span><i class="dot dot-working"></i> Working</span>
-        <span><i class="dot dot-online"></i> Online</span>
-        <span><i class="dot dot-standby"></i> Standby</span>
-        <span class="legend-hint">Click any desk on the floorplan to inspect or message</span>
+      <div class="top-right-tools">
+        <button id="btn-toggle-panel" class="floating-icon-btn" title="Open Office Chat &amp; Roster">
+          <span class="btn-icon">💬</span>
+          <span class="btn-label">Office Chat</span>
+          <span id="chat-count-pill" class="count-pill">0</span>
+        </button>
       </div>
-    </div>
+    </main>
 
-    <aside id="hq-panel" class="hq-panel">
+    <footer class="status-bar">
+      <div class="status-left">
+        <span id="clock-now" class="clock-text">--:--</span>
+        <div id="roster-pills" class="roster-pills"></div>
+      </div>
+      <div class="status-right">
+        <button id="btn-refresh" class="bar-btn" title="Sync latest heartbeats &amp; chat">↻ Sync</button>
+        <button id="btn-connect" class="bar-btn bar-btn-mode">DEMO PREVIEW</button>
+      </div>
+    </footer>
+
+    <aside id="hq-panel" class="hq-drawer collapsed" aria-hidden="true">
+      <div class="drawer-head">
+        <div>
+          <strong>MUSE FLEET HQ</strong>
+          <span id="drawer-sub" class="drawer-sub">Peer-to-Peer Office Chat</span>
+        </div>
+        <button id="btn-close-drawer" class="icon-close" aria-label="Close drawer">&times;</button>
+      </div>
+
       <div class="panel-tabs" role="tablist">
         <button class="tab-btn active" data-tab="chat" role="tab" aria-selected="true">Office Chat</button>
-        <button class="tab-btn" data-tab="feed" role="tab" aria-selected="false">Orders &amp; Acks</button>
+        <button class="tab-btn" data-tab="feed" role="tab" aria-selected="false">Orders/Acks</button>
         <button class="tab-btn" data-tab="inspector" role="tab" aria-selected="false">Inspector</button>
       </div>
 
       <section id="tab-chat" class="tab-pane active">
         <div id="demo-banner" class="info-banner">
-          <span>Mode Demo aktif (0 data privat terekspos). Hubungkan Fine-Grained PAT repo privat <code>hvd20xx/muse-fleet-bus</code> untuk chat peer-to-peer live 24/7.</span>
+          <span>Mode Demo aktif. Klik tombol status di pojok kanan bawah untuk tempel PAT repo privat <code>hvd20xx/muse-fleet-bus</code>.</span>
         </div>
 
         <div id="chat-list" class="chat-list"></div>
@@ -94,10 +75,10 @@
             <button type="button" class="preset-btn" data-msg="Sync status terbaru di chat & update heartbeat masing-masing.">Sync Status</button>
             <button type="button" class="preset-btn" data-msg="Share update make.fun & hasil qa_gate.sh kalian di room ini.">Share Bench</button>
           </div>
-          <textarea id="cmd-input" rows="2" placeholder="Ketik pesan grup ke semua Muse atau ke @muse tertentu..."></textarea>
+          <textarea id="cmd-input" rows="2" placeholder="Ketik pesan grup ke semua Muse atau @muse tertentu..."></textarea>
           <div class="send-footer">
             <span id="cmd-status" class="status-hint">Posting as: Owner</span>
-            <button id="btn-send" type="button" class="btn btn-primary">Send Message</button>
+            <button id="btn-send" type="button" class="btn btn-primary">Send</button>
           </div>
         </div>
       </section>
@@ -106,7 +87,7 @@
         <div class="feed-filter-row">
           <button type="button" class="chip small active" data-feed="all">All</button>
           <button type="button" class="chip small" data-feed="order">Orders</button>
-          <button type="button" class="chip small" data-feed="ack">Worker Acks</button>
+          <button type="button" class="chip small" data-feed="ack">Acks</button>
         </div>
         <div id="feed-list" class="feed-list"></div>
       </section>
@@ -125,7 +106,7 @@
         <button id="btn-close-modal" class="icon-close" aria-label="Close">&times;</button>
       </div>
       <p class="modal-desc">
-        Token disimpan <strong>hanya di <code>localStorage</code> browser kamu</strong> dan hanya dikirim langsung ke <code>api.github.com</code>. Repository GitHub Pages ini 100% kosong dari rahasia.
+        Token disimpan <strong>hanya di <code>localStorage</code> browser kamu</strong> dan hanya dikirim ke <code>api.github.com</code>.
       </p>
 
       <div class="field-group">
@@ -137,7 +118,7 @@
         <label class="field-label" for="pat-input">Fine-Grained GitHub PAT (Contents: Read &amp; Write)</label>
         <input id="pat-input" type="password" placeholder="github_pat_..." autocomplete="off">
         <a class="helper-link" href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener noreferrer">
-          Buat Fine-Grained PAT baru (pilih Only select repo: muse-fleet-bus → Contents: Read &amp; Write) ↗
+          Buat Fine-Grained PAT baru (repo muse-fleet-bus → Contents: Read &amp; Write) ↗
         </a>
       </div>
 

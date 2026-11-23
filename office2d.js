@@ -1,36 +1,30 @@
-const WORLD_W = 1120;
-const WORLD_H = 720;
+const WORLD_W = 960;
+const WORLD_H = 560;
 
 const ACTIVE_PEERS = ["muse-1", "muse-3", "muse-4", "muse-5"];
 const STATUS_COLORS = {
-  working: "#34d399",
-  online: "#38bdf8",
-  idle: "#38bdf8",
-  standby: "#64748b",
-  error: "#fb7185",
+  working: "#22c55e",
+  online: "#0ea5e9",
+  idle: "#0ea5e9",
+  standby: "#94a3b8",
+  error: "#ef4444",
 };
 
-const DESK_COORDS = {
-  "muse-3": { x: 560, y: 155, facing: "down" },
-  "muse-6": { x: 185, y: 215, facing: "down" },
-  "muse-7": { x: 935, y: 215, facing: "down" },
-  "muse-1": { x: 240, y: 525, facing: "up" },
-  "muse-4": { x: 560, y: 545, facing: "up" },
-  "muse-5": { x: 880, y: 525, facing: "up" },
+const COWORKER_LOOK = {
+  "muse-3": { x: 144, y: 82, shirt: "#f59e0b", hair: "#475569", hat: "beret", badge: "#d97706", facingDesk: false },
+  "muse-1": { x: 222, y: 242, shirt: "#3b82f6", hair: "#1e293b", hat: "headphones", badge: "#2563eb", facingDesk: true },
+  "muse-4": { x: 368, y: 232, shirt: "#10b981", hair: "#3f2e21", hat: "glasses", badge: "#059669", facingDesk: true },
+  "muse-5": { x: 462, y: 342, shirt: "#8b5cf6", hair: "#0f766e", hat: "cap", badge: "#7c3aed", facingDesk: true },
+  "muse-6": { x: 256, y: 492, shirt: "#64748b", hair: "#78350f", hat: "none", badge: "#64748b", facingDesk: false },
+  "muse-7": { x: 742, y: 494, shirt: "#64748b", hair: "#312e81", hat: "none", badge: "#64748b", facingDesk: false },
 };
 
-const MESH_EDGES = [
-  ["muse-3", "muse-1"],
-  ["muse-3", "muse-4"],
-  ["muse-3", "muse-5"],
-  ["muse-1", "muse-4"],
-  ["muse-4", "muse-5"],
-  ["muse-1", "muse-5"],
-  ["muse-3", "muse-6"],
-  ["muse-3", "muse-7"],
-];
+function pxRect(ctx, x, y, w, h, color) {
+  ctx.fillStyle = color;
+  ctx.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
+}
 
-function roundedRect(ctx, x, y, w, h, r) {
+function pillRect(ctx, x, y, w, h, r) {
   ctx.beginPath();
   ctx.moveTo(x + r, y);
   ctx.arcTo(x + w, y, x + w, y + h, r);
@@ -40,54 +34,175 @@ function roundedRect(ctx, x, y, w, h, r) {
   ctx.closePath();
 }
 
-function drawPlant(ctx, x, y, radius = 22) {
+function drawPlant(ctx, x, y) {
+  pxRect(ctx, x - 7, y + 6, 14, 10, "#9a5b3c");
+  pxRect(ctx, x - 9, y + 4, 18, 4, "#b46e4b");
+  pxRect(ctx, x - 10, y - 6, 8, 10, "#22c55e");
+  pxRect(ctx, x + 2, y - 8, 8, 10, "#16a34a");
+  pxRect(ctx, x - 5, y - 12, 10, 10, "#4ade80");
+}
+
+function drawWindow(ctx, x, y) {
+  pxRect(ctx, x, y, 48, 22, "#6d4c3d");
+  pxRect(ctx, x + 3, y + 3, 20, 16, "#7dd3fc");
+  pxRect(ctx, x + 25, y + 3, 20, 16, "#93c5fd");
+  pxRect(ctx, x + 6, y + 5, 6, 4, "#e0f2fe");
+  pxRect(ctx, x + 28, y + 5, 6, 4, "#e0f2fe");
+}
+
+function drawClock(ctx, x, y) {
   ctx.save();
-  ctx.translate(x, y);
-  ctx.fillStyle = "rgba(0,0,0,0.35)";
   ctx.beginPath();
-  ctx.arc(3, 4, radius, 0, Math.PI * 2);
+  ctx.arc(x, y, 11, 0, Math.PI * 2);
+  ctx.fillStyle = "#f8fafc";
   ctx.fill();
-
-  ctx.fillStyle = "#1e293b";
-  ctx.beginPath();
-  ctx.arc(0, 0, radius * 0.62, 0, Math.PI * 2);
-  ctx.fill();
-
-  for (let i = 0; i < 6; i++) {
-    const a = (i * Math.PI) / 3 + 0.2;
-    ctx.save();
-    ctx.rotate(a);
-    ctx.fillStyle = i % 2 === 0 ? "#15803d" : "#166534";
-    ctx.beginPath();
-    ctx.ellipse(radius * 0.55, 0, radius * 0.48, radius * 0.23, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-  }
+  ctx.lineWidth = 2.5;
+  ctx.strokeStyle = "#3b312a";
+  ctx.stroke();
+  pxRect(ctx, x - 1, y - 6, 2, 7, "#3b312a");
+  pxRect(ctx, x, y - 1, 5, 2, "#ef4444");
   ctx.restore();
 }
 
-function drawBubble(ctx, x, y, text, accentColor, isRight) {
-  const clean = (text || "").trim();
-  if (!clean) return;
-  const shown = clean.length > 44 ? `${clean.slice(0, 42)}…` : clean;
-  ctx.save();
-  ctx.font = "500 11.5px Inter, system-ui, sans-serif";
-  const textW = Math.min(230, Math.max(82, ctx.measureText(shown).width + 20));
-  const boxH = 26;
-  const bx = Math.max(16, Math.min(WORLD_W - textW - 16, isRight ? x - textW * 0.25 : x - textW * 0.5));
-  const by = y;
+function drawChair(ctx, x, y) {
+  pxRect(ctx, x - 11, y - 4, 22, 10, "#475569");
+  pxRect(ctx, x - 9, y - 12, 18, 9, "#64748b");
+}
 
-  roundedRect(ctx, bx, by, textW, boxH, 8);
-  ctx.fillStyle = "rgba(10, 16, 29, 0.94)";
+function drawDesk(ctx, x, y, accentColor, isActive) {
+  // Shadow
+  pxRect(ctx, x - 34, y + 4, 70, 32, "rgba(59, 49, 42, 0.14)");
+  // Wood surface
+  pxRect(ctx, x - 34, y, 68, 30, "#c4884d");
+  pxRect(ctx, x - 34, y + 26, 68, 6, "#9c6633");
+  pxRect(ctx, x - 32, y + 2, 64, 22, "#d49b62");
+  // Monitor
+  pxRect(ctx, x - 14, y - 6, 28, 20, "#334155");
+  pxRect(ctx, x - 12, y - 4, 24, 15, isActive ? accentColor : "#1e293b");
+  pxRect(ctx, x - 4, y + 14, 8, 4, "#475569");
+  // Sticky notes & paper + mug
+  pxRect(ctx, x - 28, y + 8, 10, 12, "#f8fafc");
+  pxRect(ctx, x - 26, y + 11, 6, 2, "#cbd5e1");
+  pxRect(ctx, x + 18, y + 6, 8, 8, "#fde047");
+  pxRect(ctx, x + 20, y + 18, 7, 7, "#ef4444");
+}
+
+function drawCounterDesk(ctx, x, y) {
+  pxRect(ctx, x - 42, y + 4, 84, 26, "rgba(59, 49, 42, 0.16)");
+  pxRect(ctx, x - 42, y, 84, 24, "#94a3b8");
+  pxRect(ctx, x - 40, y + 2, 80, 14, "#cbd5e1");
+  pxRect(ctx, x - 14, y - 4, 28, 16, "#334155");
+  pxRect(ctx, x - 12, y - 2, 24, 12, "#fbbf24");
+}
+
+function drawCoworker(ctx, x, y, look, status, t, pokeOffset, isSelected) {
+  const isWorking = status === "working";
+  const ringCol = STATUS_COLORS[status] || "#94a3b8";
+  const bob = isWorking ? Math.sin(t * 7 + x) * 1.3 : status === "standby" ? 0 : Math.sin(t * 2 + x) * 0.8;
+  const cy = Math.round(y + bob - pokeOffset);
+
+  // Glowing floor status ring
+  ctx.save();
+  ctx.beginPath();
+  ctx.ellipse(x, y + 20, isSelected ? 24 : 20, isSelected ? 9 : 7, 0, 0, Math.PI * 2);
+  ctx.strokeStyle = ringCol;
+  ctx.lineWidth = isSelected ? 3.5 : 2.5;
+  ctx.stroke();
+  if (isSelected) {
+    ctx.fillStyle = "rgba(245, 158, 11, 0.18)";
+    ctx.fill();
+  }
+  ctx.restore();
+
+  // Feet
+  pxRect(ctx, x - 8, cy + 12, 6, 6, "#1e293b");
+  pxRect(ctx, x + 2, cy + 12, 6, 6, "#1e293b");
+
+  // Legs
+  pxRect(ctx, x - 8, cy + 6, 7, 7, "#334155");
+  pxRect(ctx, x + 1, cy + 6, 7, 7, "#334155");
+
+  // Torso / shirt + outline
+  pxRect(ctx, x - 12, cy - 8, 24, 16, "#29201b");
+  pxRect(ctx, x - 10, cy - 6, 20, 13, look.shirt);
+
+  // Arms (typing sway if working)
+  const armY = isWorking ? Math.round(Math.sin(t * 14 + x) * 2) : 0;
+  pxRect(ctx, x - 14, cy - 5 + armY, 5, 10, look.shirt);
+  pxRect(ctx, x + 9, cy - 5 - armY, 5, 10, look.shirt);
+  pxRect(ctx, x - 14, cy + 3 + armY, 4, 4, "#fde68a");
+  pxRect(ctx, x + 10, cy + 3 - armY, 4, 4, "#fde68a");
+
+  // Head + face
+  pxRect(ctx, x - 10, cy - 26, 20, 18, "#29201b");
+  pxRect(ctx, x - 8, cy - 24, 16, 15, "#fde68a");
+  // Eyes
+  pxRect(ctx, x - 5, cy - 17, 3, 3, "#1e293b");
+  pxRect(ctx, x + 2, cy - 17, 3, 3, "#1e293b");
+
+  // Hair & accessories
+  pxRect(ctx, x - 9, cy - 27, 18, 7, look.hair);
+  if (look.hat === "beret") {
+    pxRect(ctx, x - 10, cy - 30, 18, 6, "#f59e0b");
+    pxRect(ctx, x - 2, cy - 32, 4, 3, "#d97706");
+  } else if (look.hat === "headphones") {
+    pxRect(ctx, x - 11, cy - 22, 3, 8, "#0284c7");
+    pxRect(ctx, x + 8, cy - 22, 3, 8, "#0284c7");
+    pxRect(ctx, x - 8, cy - 29, 16, 3, "#38bdf8");
+  } else if (look.hat === "glasses") {
+    pxRect(ctx, x - 7, cy - 18, 6, 4, "#0f172a");
+    pxRect(ctx, x + 1, cy - 18, 6, 4, "#0f172a");
+    pxRect(ctx, x - 1, cy - 17, 2, 2, "#0f172a");
+  } else if (look.hat === "cap") {
+    pxRect(ctx, x - 10, cy - 29, 20, 6, "#a855f7");
+    pxRect(ctx, x - 6, cy - 25, 16, 3, "#6d28d9");
+  }
+}
+
+function drawBadge(ctx, x, y, label, bgColor, isSelected) {
+  ctx.save();
+  ctx.font = "700 11px Inter, system-ui, sans-serif";
+  const w = Math.max(76, ctx.measureText(label).width + 18);
+  const h = 21;
+  const bx = Math.round(x - w / 2);
+  const by = Math.round(y);
+
+  pillRect(ctx, bx, by, w, h, 10);
+  ctx.fillStyle = bgColor;
   ctx.fill();
-  ctx.lineWidth = 1.25;
-  ctx.strokeStyle = accentColor;
+  ctx.lineWidth = isSelected ? 2 : 1.2;
+  ctx.strokeStyle = isSelected ? "#1e293b" : "#fff7ed";
   ctx.stroke();
 
-  ctx.fillStyle = "#e2e8f0";
+  ctx.fillStyle = "#ffffff";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(label, x, by + h / 2 + 0.5);
+  ctx.restore();
+}
+
+function drawSpeechBubble(ctx, x, y, text, borderColor) {
+  const clean = (text || "").trim();
+  if (!clean) return;
+  const shown = clean.length > 38 ? `${clean.slice(0, 36)}…` : clean;
+  ctx.save();
+  ctx.font = "500 10.5px Inter, system-ui, sans-serif";
+  const w = Math.min(206, Math.max(66, ctx.measureText(shown).width + 16));
+  const h = 22;
+  const bx = Math.round(Math.max(16, Math.min(WORLD_W - w - 16, x - w / 2)));
+  const by = Math.round(Math.max(12, y));
+
+  pillRect(ctx, bx, by, w, h, 6);
+  ctx.fillStyle = "#fffdf7";
+  ctx.fill();
+  ctx.lineWidth = 1.6;
+  ctx.strokeStyle = borderColor || "#3b312a";
+  ctx.stroke();
+
+  ctx.fillStyle = "#29201b";
   ctx.textAlign = "left";
   ctx.textBaseline = "middle";
-  ctx.fillText(shown, bx + 10, by + boxH / 2 + 0.5, textW - 20);
+  ctx.fillText(shown, bx + 8, by + h / 2 + 0.5, w - 16);
   ctx.restore();
 }
 
@@ -97,7 +212,9 @@ export function createOffice2DScene({ canvas, roster, onSelect }) {
   let selectedId = "muse-3";
   let stateSnapshot = { heartbeats: {}, chat: [] };
   const packets = [];
-  let transform = { scale: 1, offX: 0, offY: 0, width: 800, height: 600 };
+  const pokeTimers = new Map();
+  let starSpring = 0;
+  let transform = { scale: 1, offX: 0, offY: 0, width: 960, height: 560 };
 
   function resize() {
     const parent = canvas.parentElement;
@@ -109,8 +226,9 @@ export function createOffice2DScene({ canvas, roster, onSelect }) {
     canvas.width = Math.floor(w * dpr);
     canvas.height = Math.floor(h * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.imageSmoothingEnabled = false;
 
-    const pad = 20;
+    const pad = 18;
     const scale = Math.min((w - pad * 2) / WORLD_W, (h - pad * 2) / WORLD_H);
     const offX = (w - WORLD_W * scale) / 2;
     const offY = (h - WORLD_H * scale) / 2;
@@ -123,21 +241,21 @@ export function createOffice2DScene({ canvas, roster, onSelect }) {
   }
   resize();
 
-  function triggerPacket(fromId, toId, colorHex = "#38bdf8") {
-    const fromPt = fromId === "owner" ? { x: 560, y: 42 } : DESK_COORDS[fromId];
+  function triggerPacket(fromId, toId, colorHex = "#f59e0b") {
+    const fromPt = fromId === "owner" ? { x: 144, y: 126 } : COWORKER_LOOK[fromId];
     if (!fromPt) return;
     const targets = toId === "all" ? ACTIVE_PEERS.filter((id) => id !== fromId) : [toId];
     for (const tid of targets) {
-      const toPt = DESK_COORDS[tid];
+      const toPt = COWORKER_LOOK[tid];
       if (!toPt) continue;
       packets.push({
         ax: fromPt.x,
-        ay: fromPt.y,
+        ay: fromPt.y - 10,
         bx: toPt.x,
-        by: toPt.y,
+        by: toPt.y - 10,
         color: colorHex,
         t: 0,
-        speed: 0.95 + Math.random() * 0.25,
+        speed: 0.72 + Math.random() * 0.25,
       });
     }
   }
@@ -147,7 +265,10 @@ export function createOffice2DScene({ canvas, roster, onSelect }) {
   }
 
   function focusDesk(id) {
-    if (DESK_COORDS[id]) selectedId = id;
+    if (COWORKER_LOOK[id]) {
+      selectedId = id;
+      pokeTimers.set(id, performance.now());
+    }
   }
 
   function resetCamera() {
@@ -158,11 +279,19 @@ export function createOffice2DScene({ canvas, roster, onSelect }) {
     const rect = canvas.getBoundingClientRect();
     const wx = (ev.clientX - rect.left - transform.offX) / transform.scale;
     const wy = (ev.clientY - rect.top - transform.offY) / transform.scale;
+
+    // Paper star interaction on lounge table
+    if (Math.hypot(wx - 210, wy - 498) <= 22) {
+      starSpring = 1;
+      return;
+    }
+
     for (const meta of roster) {
-      const pos = DESK_COORDS[meta.id];
-      if (!pos) continue;
-      if (Math.abs(wx - pos.x) <= 78 && Math.abs(wy - pos.y) <= 58) {
+      const look = COWORKER_LOOK[meta.id];
+      if (!look) continue;
+      if (Math.abs(wx - look.x) <= 44 && Math.abs(wy - look.y) <= 42) {
         selectedId = meta.id;
+        pokeTimers.set(meta.id, performance.now());
         onSelect?.(meta.id);
         return;
       }
@@ -172,262 +301,283 @@ export function createOffice2DScene({ canvas, roster, onSelect }) {
   function latestBubbleFor(id) {
     const msgs = stateSnapshot.chat || [];
     for (let i = msgs.length - 1; i >= 0; i--) {
-      if (msgs[i].from === id && msgs[i].text) {
-        return msgs[i].text;
-      }
+      if (msgs[i].from === id && msgs[i].text) return msgs[i].text;
     }
-    return stateSnapshot.heartbeats?.[id]?.task || rosterById[id]?.subtitle || "";
+    if (id === selectedId) {
+      return stateSnapshot.heartbeats?.[id]?.task || rosterById[id]?.subtitle || "";
+    }
+    return "";
   }
 
-  function drawFloorplan(t) {
+  function drawScene(nowMs) {
+    const t = nowMs * 0.001;
     ctx.clearRect(0, 0, transform.width, transform.height);
     ctx.save();
     ctx.translate(transform.offX, transform.offY);
     ctx.scale(transform.scale, transform.scale);
 
-    // Outer architectural studio slab
-    roundedRect(ctx, 24, 24, WORLD_W - 48, WORLD_H - 48, 22);
-    ctx.fillStyle = "#0b1220";
-    ctx.fill();
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = "rgba(148, 163, 184, 0.22)";
-    ctx.stroke();
+    // Outer architectural office wall
+    pxRect(ctx, 0, 0, WORLD_W, WORLD_H, "#3b312a");
 
-    // Subtle tile grid
-    ctx.save();
-    ctx.beginPath();
-    roundedRect(ctx, 24, 24, WORLD_W - 48, WORLD_H - 48, 22);
-    ctx.clip();
-    ctx.strokeStyle = "rgba(38, 53, 79, 0.35)";
-    ctx.lineWidth = 1;
-    for (let x = 64; x < WORLD_W - 24; x += 48) {
-      ctx.beginPath();
-      ctx.moveTo(x, 24);
-      ctx.lineTo(x, WORLD_H - 24);
-      ctx.stroke();
-    }
-    for (let y = 64; y < WORLD_H - 24; y += 48) {
-      ctx.beginPath();
-      ctx.moveTo(24, y);
-      ctx.lineTo(WORLD_W - 24, y);
-      ctx.stroke();
-    }
+    // 1. Top Reception / Command Room
+    pxRect(ctx, 8, 8, 670, 128, "#d7c5a5");
+    for (let gx = 8; gx < 678; gx += 32) pxRect(ctx, gx, 8, 1, 128, "rgba(139,115,85,0.16)");
+    for (let gy = 8; gy < 136; gy += 32) pxRect(ctx, 8, gy, 670, 1, "rgba(139,115,85,0.16)");
 
-    // Top Owner Doorway & Zone labels
-    ctx.fillStyle = "rgba(56, 189, 248, 0.14)";
-    ctx.fillRect(495, 24, 130, 10);
-    ctx.font = "600 10px 'JetBrains Mono', monospace";
-    ctx.fillStyle = "#64748b";
+    // 2. Main Engineering & Ops Floor
+    pxRect(ctx, 8, 144, 670, 276, "#e4d4b7");
+    for (let gx = 8; gx < 678; gx += 32) pxRect(ctx, gx, 144, 1, 276, "rgba(139,115,85,0.13)");
+    for (let gy = 144; gy < 420; gy += 32) pxRect(ctx, 8, gy, 670, 1, "rgba(139,115,85,0.13)");
+
+    // 3. Right Meeting & Lounge Wing
+    pxRect(ctx, 686, 8, 266, 412, "#8e93b2");
+    pxRect(ctx, 704, 66, 230, 164, "#797ea1");
+
+    // 4. Bottom-Left Cafe Lounge
+    pxRect(ctx, 8, 428, 492, 124, "#a3b89b");
+    pxRect(ctx, 56, 444, 240, 102, "#88a27f");
+
+    // 5. Bottom-Right Research Library & Server Rack
+    pxRect(ctx, 508, 428, 444, 124, "#9295b4");
+
+    // Doorways across dark inner walls
+    pxRect(ctx, 118, 134, 52, 12, "#d7c5a5");
+    pxRect(ctx, 118, 122, 52, 14, "#cbb794");
+    ctx.font = "700 8px 'JetBrains Mono', monospace";
+    ctx.fillStyle = "#786650";
     ctx.textAlign = "center";
-    ctx.fillText("OWNER / HQ GATEWAY", 560, 48);
-    ctx.textAlign = "left";
-    ctx.fillText("COMMAND & PEER MESH", 52, 54);
-    ctx.fillText("OPERATIONS FLOOR", 52, 682);
-    ctx.restore();
+    ctx.fillText("WELCOME", 144, 131);
 
-    // Commander dais zone under muse-3
-    roundedRect(ctx, 415, 72, 290, 166, 18);
-    ctx.fillStyle = "rgba(245, 158, 11, 0.06)";
-    ctx.fill();
-    ctx.setLineDash([6, 5]);
-    ctx.strokeStyle = "rgba(245, 158, 11, 0.32)";
-    ctx.stroke();
-    ctx.setLineDash([]);
+    pxRect(ctx, 212, 418, 52, 12, "#a3b89b");
+    pxRect(ctx, 312, 418, 52, 12, "#a3b89b");
+    pxRect(ctx, 676, 166, 12, 46, "#8e93b2");
 
-    // Central round collaboration table
-    ctx.save();
-    ctx.translate(560, 355);
-    ctx.fillStyle = "rgba(0,0,0,0.35)";
-    ctx.beginPath();
-    ctx.arc(4, 6, 56, 0, Math.PI * 2);
-    ctx.fill();
+    // Windows along top wall
+    for (const wx of [44, 160, 290, 420, 560, 720, 816]) {
+      drawWindow(ctx, wx, 14);
+    }
 
-    ctx.fillStyle = "#162238";
-    ctx.beginPath();
-    ctx.arc(0, 0, 56, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = "rgba(56, 189, 248, 0.28)";
-    ctx.stroke();
+    // Reception props: corkboard, coat rack, water cooler, plants
+    pxRect(ctx, 250, 46, 56, 36, "#8c5a2b");
+    pxRect(ctx, 254, 50, 48, 28, "#d4a373");
+    pxRect(ctx, 258, 54, 10, 8, "#fde047");
+    pxRect(ctx, 272, 54, 10, 8, "#f472b6");
+    pxRect(ctx, 258, 65, 18, 10, "#93c5fd");
+    pxRect(ctx, 280, 65, 16, 10, "#f8fafc");
 
-    ctx.fillStyle = "rgba(56, 189, 248, 0.12)";
-    ctx.beginPath();
-    ctx.arc(0, 0, 24, 0, Math.PI * 2);
-    ctx.fill();
+    pxRect(ctx, 434, 44, 4, 34, "#6d4c3d");
+    pxRect(ctx, 426, 76, 20, 4, "#6d4c3d");
+    pxRect(ctx, 428, 50, 16, 3, "#6d4c3d");
 
-    ctx.font = "700 11px 'JetBrains Mono', monospace";
-    ctx.fillStyle = "#94a3b8";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText("P2P MESH", 0, -6);
-    ctx.font = "500 10px 'JetBrains Mono', monospace";
+    pxRect(ctx, 646, 48, 14, 18, "#f8fafc");
+    pxRect(ctx, 648, 36, 10, 12, "#7dd3fc");
+
+    drawPlant(ctx, 204, 42);
+    drawPlant(ctx, 618, 42);
+    drawPlant(ctx, 706, 48);
+    drawPlant(ctx, 26, 376);
+    drawPlant(ctx, 654, 392);
+    drawPlant(ctx, 712, 362);
+    drawPlant(ctx, 926, 342);
+
+    // Main Floor props: SHIP IT poster, SPRINT Kanban board, rolling whiteboard, clocks
+    pxRect(ctx, 24, 176, 70, 46, "#f8fafc");
+    pxRect(ctx, 26, 178, 66, 42, "#f1f5f9");
+    ctx.font = "700 10px 'JetBrains Mono', monospace";
     ctx.fillStyle = "#64748b";
-    ctx.fillText("LIVE BUS", 0, 9);
-    ctx.restore();
+    ctx.fillText("SHIP IT", 59, 195);
+    ctx.font = "500 8.5px Inter, sans-serif";
+    ctx.fillText("everyday", 59, 208);
 
-    // Server rack (top-left inner wall) & studio plants
-    roundedRect(ctx, 64, 72, 48, 92, 8);
-    ctx.fillStyle = "#111827";
+    // SPRINT Kanban Board
+    pxRect(ctx, 144, 150, 84, 52, "#e2e8f0");
+    pxRect(ctx, 144, 150, 84, 12, "#6366f1");
+    ctx.font = "700 8px 'JetBrains Mono', monospace";
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText("SPRINT", 186, 158);
+    ctx.fillStyle = "#64748b";
+    ctx.font = "600 6.5px 'JetBrains Mono', monospace";
+    ctx.fillText("TODO  DOING  DONE", 186, 169);
+    pxRect(ctx, 150, 174, 18, 10, "#cbd5e1");
+    pxRect(ctx, 176, 174, 18, 10, "#fde047");
+    pxRect(ctx, 202, 174, 18, 10, "#86efac");
+    pxRect(ctx, 176, 188, 18, 8, "#93c5fd");
+
+    // Floor section subtitles
+    ctx.font = "700 8px 'JetBrains Mono', monospace";
+    ctx.fillStyle = "#8d7b63";
+    ctx.fillText("COMMAND & PEER MESH", 435, 166);
+    ctx.fillText("OPERATIONS", 435, 314);
+    ctx.fillText("RESEARCH", 740, 444);
+    ctx.fillText("LOUNGE", 142, 442);
+
+    // Rolling Whiteboard on right of Main Floor
+    pxRect(ctx, 592, 312, 66, 44, "#94a3b8");
+    pxRect(ctx, 595, 315, 60, 38, "#f8fafc");
+    pxRect(ctx, 602, 323, 30, 3, "#3b82f6");
+    pxRect(ctx, 602, 331, 18, 12, "#10b981");
+    pxRect(ctx, 626, 331, 18, 12, "#6366f1");
+    pxRect(ctx, 648, 318, 12, 8, "#f472b6");
+
+    drawClock(ctx, 646, 146);
+    drawClock(ctx, 672, 286);
+
+    // Meeting Room Furniture
+    pxRect(ctx, 764, 124, 108, 62, "#c4884d");
+    pxRect(ctx, 768, 128, 100, 54, "#d49b62");
+    for (const cx of [788, 818, 848]) {
+      pxRect(ctx, cx - 8, 108, 16, 12, "#475569");
+      pxRect(ctx, cx - 8, 190, 16, 12, "#475569");
+    }
+    // Meeting lounge couch + round table
+    pxRect(ctx, 754, 290, 108, 32, "#9a5b3c");
+    pxRect(ctx, 762, 298, 92, 20, "#b46e4b");
+    ctx.beginPath();
+    ctx.arc(808, 356, 22, 0, Math.PI * 2);
+    ctx.fillStyle = "#c4884d";
     ctx.fill();
-    ctx.strokeStyle = "rgba(148, 163, 184, 0.28)";
-    ctx.stroke();
+
+    // Cafe Lounge Furniture (Coffee machine, sofa, round table + star, sleeping cat, WC)
+    pxRect(ctx, 20, 456, 20, 24, "#1e293b");
+    pxRect(ctx, 23, 459, 14, 7, "#ef4444");
+    pxRect(ctx, 44, 462, 12, 16, "#e0f2fe");
+
+    pxRect(ctx, 74, 444, 96, 28, "#8c5a3b");
+    pxRect(ctx, 82, 450, 80, 16, "#a46d49");
+
+    // Round table + interactive Paper Star
+    ctx.beginPath();
+    ctx.arc(210, 498, 25, 0, Math.PI * 2);
+    ctx.fillStyle = "#c4884d";
+    ctx.fill();
+    if (starSpring > 0) starSpring = Math.max(0, starSpring - 0.04);
+    const sScale = 1 + Math.sin(starSpring * Math.PI * 4) * starSpring * 0.25;
+    ctx.save();
+    ctx.translate(210, 498);
+    ctx.scale(sScale, sScale);
+    ctx.fillStyle = "#fde047";
+    ctx.beginPath();
     for (let i = 0; i < 5; i++) {
-      ctx.fillStyle = Math.sin(t * 4 + i) > 0 ? "#34d399" : "#38bdf8";
-      ctx.fillRect(74, 84 + i * 15, 28, 5);
+      const a1 = -Math.PI / 2 + (i * Math.PI * 2) / 5;
+      const a2 = a1 + Math.PI / 5;
+      if (i === 0) ctx.moveTo(Math.cos(a1) * 14, Math.sin(a1) * 14);
+      else ctx.lineTo(Math.cos(a1) * 14, Math.sin(a1) * 14);
+      ctx.lineTo(Math.cos(a2) * 6, Math.sin(a2) * 6);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+
+    // Sleeping pixel gray cat
+    pxRect(ctx, 134, 514, 18, 10, "#94a3b8");
+    pxRect(ctx, 148, 512, 8, 8, "#94a3b8");
+    pxRect(ctx, 126, 518, 9, 4, "#64748b");
+
+    // Mini WC nook
+    pxRect(ctx, 374, 452, 104, 82, "#d1d5db");
+    pxRect(ctx, 378, 456, 96, 74, "#e2e8f0");
+    pxRect(ctx, 434, 464, 24, 14, "#f8fafc");
+    ctx.font = "700 8px 'JetBrains Mono', monospace";
+    ctx.fillStyle = "#64748b";
+    ctx.fillText("WC", 424, 488);
+
+    // Research Library: Bookshelves, Printer, Phone booth, Server rack
+    for (const bx of [522, 686, 800]) {
+      pxRect(ctx, bx, 452, 84, 34, "#8c5a2b");
+      pxRect(ctx, bx + 4, 456, 76, 11, "#6d4c3d");
+      pxRect(ctx, bx + 4, 470, 76, 11, "#6d4c3d");
+      const bookCols = ["#ef4444", "#f59e0b", "#22c55e", "#3b82f6", "#a855f7"];
+      for (let b = 0; b < 7; b++) {
+        pxRect(ctx, bx + 7 + b * 10, 457, 7, 10, bookCols[b % bookCols.length]);
+        pxRect(ctx, bx + 9 + b * 10, 471, 7, 10, bookCols[(b + 2) % bookCols.length]);
+      }
+    }
+    pxRect(ctx, 648, 498, 22, 16, "#f8fafc");
+    pxRect(ctx, 846, 484, 42, 48, "#6366f1");
+    ctx.fillStyle = "#e0e7ff";
+    ctx.fillText("PHONE", 867, 496);
+    pxRect(ctx, 860, 504, 14, 18, "#334155");
+
+    // Blinking server rack
+    pxRect(ctx, 900, 444, 36, 74, "#0f172a");
+    for (let i = 0; i < 6; i++) {
+      pxRect(ctx, 906, 452 + i * 11, 24, 4, Math.sin(t * 4 + i) > 0 ? "#22c55e" : "#38bdf8");
     }
 
-    drawPlant(ctx, 72, 650, 22);
-    drawPlant(ctx, 1048, 650, 22);
-    drawPlant(ctx, 1046, 98, 22);
+    // Subtle P2P mesh lines between active coworkers
+    ctx.save();
+    ctx.setLineDash([5, 6]);
+    ctx.lineDashOffset = -t * 14;
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = "rgba(59, 130, 246, 0.25)";
+    for (let i = 0; i < ACTIVE_PEERS.length; i++) {
+      for (let j = i + 1; j < ACTIVE_PEERS.length; j++) {
+        const a = COWORKER_LOOK[ACTIVE_PEERS[i]];
+        const b = COWORKER_LOOK[ACTIVE_PEERS[j]];
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y + 8);
+        ctx.lineTo(b.x, b.y + 8);
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
 
-    // Full P2P Mesh floor cables
-    for (const [aId, bId] of MESH_EDGES) {
-      const a = DESK_COORDS[aId];
-      const b = DESK_COORDS[bId];
-      const isStandby = aId === "muse-6" || aId === "muse-7" || bId === "muse-6" || bId === "muse-7";
-      ctx.save();
-      ctx.beginPath();
-      ctx.moveTo(a.x, a.y);
-      ctx.lineTo(b.x, b.y);
-      ctx.lineWidth = isStandby ? 1.2 : 2;
-      ctx.setLineDash([8, 8]);
-      ctx.lineDashOffset = isStandby ? 0 : -t * 16;
-      ctx.strokeStyle = isStandby ? "rgba(100, 116, 139, 0.22)" : "rgba(56, 189, 248, 0.26)";
-      ctx.stroke();
-      ctx.restore();
+    // Draw Commander Desk (Reception) & Worker Desks
+    drawCounterDesk(ctx, 144, 62);
+    for (const id of ["muse-1", "muse-4", "muse-5"]) {
+      const look = COWORKER_LOOK[id];
+      const meta = rosterById[id];
+      const st = stateSnapshot.heartbeats?.[id]?.status || "online";
+      drawChair(ctx, look.x, look.y + 8);
+      drawDesk(ctx, look.x, look.y - 34, meta?.color || "#38bdf8", st !== "standby");
     }
 
-    // Workstations (6 named top-down desks)
+    // Draw all 6 pixel coworkers + badges + speech bubbles
     for (const meta of roster) {
-      const pos = DESK_COORDS[meta.id];
-      if (!pos) continue;
+      const look = COWORKER_LOOK[meta.id];
+      if (!look) continue;
       const hb = stateSnapshot.heartbeats?.[meta.id] || {};
       const status = hb.status || (meta.role === "STANDBY" ? "standby" : "online");
-      const statusCol = STATUS_COLORS[status] || meta.color;
-      const isCmd = meta.role === "COMMANDER";
-      const isSelected = meta.id === selectedId;
-      const isWorking = status === "working";
-      const facingDown = pos.facing === "down";
-
-      ctx.save();
-      ctx.translate(pos.x, pos.y);
-
-      // Floor halo / selection ring
-      ctx.beginPath();
-      ctx.arc(0, 0, isCmd ? 74 : 62, 0, Math.PI * 2);
-      ctx.fillStyle = isSelected ? "rgba(245, 158, 11, 0.10)" : "rgba(15, 23, 42, 0.45)";
-      ctx.fill();
-      ctx.lineWidth = isSelected ? 2.5 : 1.3;
-      ctx.strokeStyle = isSelected ? meta.color : statusCol;
-      ctx.globalAlpha = isSelected ? 0.95 : 0.45;
-      ctx.stroke();
-      ctx.globalAlpha = 1;
-
-      // Desk surface
-      const dw = isCmd ? 128 : 108;
-      const dh = 52;
-      const deskY = facingDown ? -10 : -42;
-      roundedRect(ctx, -dw / 2, deskY, dw, dh, 10);
-      ctx.fillStyle = "#182338";
-      ctx.fill();
-      ctx.lineWidth = 1.6;
-      ctx.strokeStyle = meta.color;
-      ctx.stroke();
-
-      // Monitor(s) on desk
-      const monY = facingDown ? deskY + 34 : deskY + 8;
-      const monOffsets = isCmd ? [-28, 28] : [0];
-      for (const mx of monOffsets) {
-        roundedRect(ctx, mx - 21, monY, 42, 10, 3);
-        ctx.fillStyle = status === "standby" ? "#1e293b" : meta.color;
-        ctx.fill();
+      const pokeStart = pokeTimers.get(meta.id);
+      let pokeOffset = 0;
+      if (pokeStart) {
+        const elapsed = (nowMs - pokeStart) / 1000;
+        if (elapsed < 0.45) {
+          pokeOffset = Math.sin((elapsed / 0.45) * Math.PI) * 10;
+        } else {
+          pokeTimers.delete(meta.id);
+        }
       }
 
-      // Keyboard pad
-      const kbY = facingDown ? deskY + 14 : deskY + 28;
-      roundedRect(ctx, -18, kbY, 36, 9, 2);
-      ctx.fillStyle = "#0b1220";
-      ctx.fill();
+      drawCoworker(ctx, look.x, look.y, look, status, t, pokeOffset, meta.id === selectedId);
+      const badgeLabel = meta.role === "COMMANDER" ? `${meta.id} ★` : meta.id;
+      drawBadge(ctx, look.x, look.y - 54 - pokeOffset, badgeLabel, look.badge, meta.id === selectedId);
 
-      // Chair & Top-Down Seated Avatar
-      const avY = facingDown ? -30 : 28;
-      roundedRect(ctx, -20, avY - 14, 40, 28, 9);
-      ctx.fillStyle = "#1e293b";
-      ctx.fill();
-
-      // Typing arm sway when working
-      const sway = isWorking ? Math.sin(t * 9 + pos.x) * 2.5 : 0;
-      ctx.fillStyle = "#cbd5e1";
-      ctx.beginPath();
-      ctx.arc(-14, avY + (facingDown ? 10 + sway : -10 - sway), 5.5, 0, Math.PI * 2);
-      ctx.arc(14, avY + (facingDown ? 10 - sway : -10 + sway), 5.5, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Shoulders + Head
-      roundedRect(ctx, -17, avY - 9, 34, 18, 9);
-      ctx.fillStyle = meta.color;
-      ctx.fill();
-
-      ctx.beginPath();
-      ctx.arc(0, avY, 11, 0, Math.PI * 2);
-      ctx.fillStyle = "#f1f5f9";
-      ctx.fill();
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = "#0f172a";
-      ctx.stroke();
-
-      // Nameplate & status pill under/above desk
-      const labelY = facingDown ? 64 : 62;
-      roundedRect(ctx, -74, labelY, 148, 36, 8);
-      ctx.fillStyle = "rgba(8, 13, 24, 0.92)";
-      ctx.fill();
-      ctx.lineWidth = 1.2;
-      ctx.strokeStyle = isSelected ? meta.color : "rgba(148, 163, 184, 0.28)";
-      ctx.stroke();
-
-      // Status dot
-      ctx.beginPath();
-      ctx.arc(-60, labelY + 12, 4.5, 0, Math.PI * 2);
-      ctx.fillStyle = statusCol;
-      ctx.fill();
-
-      ctx.font = "700 11.5px 'JetBrains Mono', monospace";
-      ctx.fillStyle = "#f8fafc";
-      ctx.textAlign = "left";
-      ctx.textBaseline = "middle";
-      ctx.fillText(`${meta.id} · ${meta.name}`, -50, labelY + 12);
-
-      ctx.font = "500 10px 'JetBrains Mono', monospace";
-      ctx.fillStyle = "#94a3b8";
-      const bal = hb.balance || "$0.00";
-      ctx.fillText(`${isCmd ? "CMD" : meta.role} · ${status.toUpperCase()} · ${bal}`, -62, labelY + 27);
-
-      ctx.restore();
-
-      // Floating speech bubble (latest peer chat or task)
-      const bubbleText = latestBubbleFor(meta.id);
-      const bubbleY = facingDown ? pos.y - 84 : pos.y - 82;
-      drawBubble(ctx, pos.x, bubbleY, bubbleText, meta.color, meta.id === "muse-5");
+      const bubble = latestBubbleFor(meta.id);
+      if (bubble) {
+        drawSpeechBubble(ctx, look.x, look.y - 80 - pokeOffset, bubble, look.badge);
+      }
     }
 
-    // Animated peer-to-peer message orbs
+    // Animated pixel mail envelopes for live messages
     for (let i = packets.length - 1; i >= 0; i--) {
       const p = packets[i];
-      p.t += 0.016 * p.speed;
+      p.t += 0.015 * p.speed;
       if (p.t >= 1) {
         packets.splice(i, 1);
         continue;
       }
-      const x = p.ax + (p.bx - p.ax) * p.t;
-      const y = p.ay + (p.by - p.ay) * p.t;
-      ctx.save();
+      const ex = p.ax + (p.bx - p.ax) * p.t;
+      const ey = p.ay + (p.by - p.ay) * p.t - Math.sin(p.t * Math.PI) * 18;
+      pxRect(ctx, ex - 8, ey - 6, 16, 12, "#fffdf7");
+      ctx.strokeStyle = p.color;
+      ctx.lineWidth = 1.6;
+      ctx.strokeRect(ex - 8, ey - 6, 16, 12);
       ctx.beginPath();
-      ctx.arc(x, y, 7, 0, Math.PI * 2);
-      ctx.fillStyle = p.color;
-      ctx.shadowColor = p.color;
-      ctx.shadowBlur = 14;
-      ctx.fill();
-      ctx.restore();
+      ctx.moveTo(ex - 8, ey - 6);
+      ctx.lineTo(ex, ey + 1);
+      ctx.lineTo(ex + 8, ey - 6);
+      ctx.stroke();
     }
 
     ctx.restore();
@@ -435,7 +585,7 @@ export function createOffice2DScene({ canvas, roster, onSelect }) {
 
   function animate(now) {
     requestAnimationFrame(animate);
-    drawFloorplan(now * 0.001);
+    drawScene(now);
   }
   requestAnimationFrame(animate);
 
