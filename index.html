@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Muse Fleet HQ — 3D Autonomous Office</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="app">
+    <div class="viewport-wrap">
+      <canvas id="office-canvas" aria-label="Muse Fleet 3D Office"></canvas>
+      <div id="nameplates-layer" aria-hidden="false"></div>
+
+      <header class="hud-top">
+        <div class="brand-cluster">
+          <div class="brand-mark">M3</div>
+          <div>
+            <div class="brand-title-row">
+              <h1>MUSE FLEET HQ</h1>
+              <span id="mode-badge" class="badge badge-demo">DEMO PREVIEW</span>
+            </div>
+            <p class="brand-sub">Commander <strong>muse-3 (Studio)</strong> → Workers <strong>muse-1 · muse-4 · muse-5</strong></p>
+          </div>
+        </div>
+
+        <div class="hud-metrics">
+          <div class="metric-pill">
+            <span class="metric-label">Active</span>
+            <span id="metric-active" class="metric-val">4/6</span>
+          </div>
+          <div class="metric-pill">
+            <span class="metric-label">Orders</span>
+            <span id="metric-orders" class="metric-val">0</span>
+          </div>
+          <div class="metric-pill">
+            <span class="metric-label">Acks</span>
+            <span id="metric-acks" class="metric-val">0</span>
+          </div>
+          <div class="metric-pill">
+            <span class="metric-label">Sync</span>
+            <span id="metric-sync" class="metric-val">--:--</span>
+          </div>
+        </div>
+
+        <div class="hud-actions">
+          <button id="btn-refresh" class="btn btn-ghost" title="Sync latest heartbeats & orders">Sync</button>
+          <button id="btn-reset-cam" class="btn btn-ghost" title="Reset 3D camera">Reset View</button>
+          <button id="btn-toggle-panel" class="btn btn-ghost" title="Toggle Command Panel">Panel</button>
+          <button id="btn-connect" class="btn btn-accent">Connect Private Bus</button>
+        </div>
+      </header>
+
+      <div class="hud-legend">
+        <span><i class="dot dot-commander"></i> Commander</span>
+        <span><i class="dot dot-working"></i> Working</span>
+        <span><i class="dot dot-online"></i> Online</span>
+        <span><i class="dot dot-standby"></i> Standby</span>
+        <span class="legend-hint">Drag: Orbit · Scroll: Zoom · Click Desk: Inspect</span>
+      </div>
+    </div>
+
+    <aside id="hq-panel" class="hq-panel">
+      <div class="panel-tabs" role="tablist">
+        <button class="tab-btn active" data-tab="command" role="tab" aria-selected="true">Command</button>
+        <button class="tab-btn" data-tab="feed" role="tab" aria-selected="false">Live Feed</button>
+        <button class="tab-btn" data-tab="inspector" role="tab" aria-selected="false">Inspector</button>
+      </div>
+
+      <section id="tab-command" class="tab-pane active">
+        <div id="demo-banner" class="info-banner">
+          <span>Mode Demo aktif (0 data privat terekspos). Hubungkan Fine-Grained PAT repo privat <code>hvd20xx/muse-fleet-bus</code> untuk kendali live 24/7.</span>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label">Target Muse</label>
+          <div id="target-chips" class="chip-grid">
+            <button type="button" class="chip active" data-target="all">ALL WORKERS</button>
+            <button type="button" class="chip" data-target="muse-3">muse-3 · Studio</button>
+            <button type="button" class="chip" data-target="muse-1">muse-1 · Feed</button>
+            <button type="button" class="chip" data-target="muse-4">muse-4 · Klip</button>
+            <button type="button" class="chip" data-target="muse-5">muse-5 · Distro</button>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <div class="field-row">
+            <label class="field-label" for="cmd-input">Instruction / Order</label>
+            <label class="priority-toggle">
+              <input id="cmd-priority" type="checkbox">
+              <span>High Priority</span>
+            </label>
+          </div>
+          <div class="preset-row">
+            <button type="button" class="preset-btn" data-msg="Sync status terbaru: laporkan task aktif, hasil qa_gate.sh, submission make.fun, dan update heartbeat sekarang.">Sync Status</button>
+            <button type="button" class="preset-btn" data-msg="Sweep kontes $0 make.fun aktif, jalankan Phase 0 + overlap penuh, pakai native compiled speed tier bila memungkinkan.">Sweep make.fun</button>
+            <button type="button" class="preset-btn" data-msg="Jalankan ~/workspace/tools/qa_gate.sh pada proyek aktif terbaru dan kirim ack ringkasan benchmark p50/p95.">Run QA Gate</button>
+          </div>
+          <textarea id="cmd-input" rows="4" placeholder="Contoh: Semua muse gas evaluasi hidden-spec-cli / news-image hari ini dan lapor status lewat ack..."></textarea>
+        </div>
+
+        <div class="send-footer">
+          <span id="cmd-status" class="status-hint">Sender: muse-3 (Commander)</span>
+          <button id="btn-send" type="button" class="btn btn-primary">Dispatch Order</button>
+        </div>
+      </section>
+
+      <section id="tab-feed" class="tab-pane">
+        <div class="feed-filter-row">
+          <button type="button" class="chip small active" data-feed="all">All</button>
+          <button type="button" class="chip small" data-feed="order">Orders</button>
+          <button type="button" class="chip small" data-feed="ack">Worker Acks</button>
+        </div>
+        <div id="feed-list" class="feed-list"></div>
+      </section>
+
+      <section id="tab-inspector" class="tab-pane">
+        <div id="inspector-card" class="inspector-card"></div>
+      </section>
+    </aside>
+  </div>
+
+  <div id="connect-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-backdrop"></div>
+    <div class="modal-dialog">
+      <div class="modal-head">
+        <h2 id="modal-title">Connect Private Fleet Bus</h2>
+        <button id="btn-close-modal" class="icon-close" aria-label="Close">&times;</button>
+      </div>
+      <p class="modal-desc">
+        Token disimpan <strong>hanya di <code>localStorage</code> browser kamu</strong> dan hanya dikirim langsung ke <code>api.github.com</code>. Repository GitHub Pages ini 100% kosong dari rahasia.
+      </p>
+
+      <div class="field-group">
+        <label class="field-label" for="repo-input">Private Bus Repository</label>
+        <input id="repo-input" type="text" value="hvd20xx/muse-fleet-bus" placeholder="owner/muse-fleet-bus">
+      </div>
+
+      <div class="field-group">
+        <label class="field-label" for="pat-input">Fine-Grained GitHub PAT (Contents: Read &amp; Write)</label>
+        <input id="pat-input" type="password" placeholder="github_pat_..." autocomplete="off">
+        <a class="helper-link" href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener noreferrer">
+          Buat Fine-Grained PAT baru (pilih Only select repo: muse-fleet-bus → Contents: Read &amp; Write) ↗
+        </a>
+      </div>
+
+      <div id="modal-error" class="modal-error hidden"></div>
+
+      <div class="modal-actions">
+        <button id="btn-disconnect" type="button" class="btn btn-ghost">Use Demo Mode</button>
+        <button id="btn-save-bus" type="button" class="btn btn-primary">Verify &amp; Connect</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
