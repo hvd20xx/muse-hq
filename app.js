@@ -101,15 +101,16 @@ function activateTab(tabName) {
   });
 }
 
+function displayName(id) {
+  if (id === "owner") return "OWNER";
+  if (id === "all") return "ALL";
+  const m = ROSTER_BY_ID[id];
+  return m ? `Muse-${m.name}` : id;
+}
+
 function senderColor(fromId) {
   if (fromId === "owner") return "#e11d48";
   return ROSTER_BY_ID[fromId]?.color || "#2563eb";
-}
-
-function senderLabel(fromId) {
-  if (fromId === "owner") return "OWNER";
-  const m = ROSTER_BY_ID[fromId];
-  return m ? `${m.id} · ${m.name}` : fromId;
 }
 
 function updateClock() {
@@ -136,7 +137,7 @@ function renderStatusBar() {
         const sel = m.id === selectedDesk ? "selected" : "";
         return `<button type="button" class="roster-pill ${sel}" data-pick="${esc(m.id)}">
           <i class="dot" style="background:${col}"></i>
-          <strong>${esc(m.id)}</strong> · ${esc(st)}
+          <strong>${esc(displayName(m.id))}</strong> · ${esc(st)}
         </button>`;
       })
       .join("") +
@@ -165,7 +166,7 @@ function renderChat() {
       return `
         <div class="chat-msg" style="--sender-color: ${col}">
           <div class="chat-msg-head">
-            <span class="chat-sender">${esc(senderLabel(m.from))} → ${esc(m.to)}</span>
+            <span class="chat-sender">${esc(displayName(m.from))} → ${esc(displayName(m.to))}</span>
             <span class="chat-time">${esc(shortTime(m.created_at))}</span>
           </div>
           <div class="chat-text">${esc(m.text)}</div>
@@ -195,8 +196,8 @@ function renderFeed() {
         return `
           <div class="feed-card">
             <div class="feed-meta">
-              <span class="feed-tag order">ORDER → ${esc(o.target)}</span>
-              <span>from ${esc(o.from || "muse-3")} · ${esc(shortTime(o.created_at))}</span>
+              <span class="feed-tag order">ORDER → ${esc(displayName(o.target))}</span>
+              <span>from ${esc(displayName(o.from || "muse-3"))} · ${esc(shortTime(o.created_at))}</span>
             </div>
             <div class="feed-body">${esc(o.message)}</div>
           </div>`;
@@ -205,7 +206,7 @@ function renderFeed() {
       return `
         <div class="feed-card">
           <div class="feed-meta">
-            <span class="feed-tag ack">ACK ${esc(a.muse_id)} (${esc(a.status)})</span>
+            <span class="feed-tag ack">ACK ${esc(displayName(a.muse_id))} (${esc(a.status)})</span>
             <span>${esc(shortTime(a.updated_at))}</span>
           </div>
           <div class="feed-body">${esc(a.summary)}</div>
@@ -221,10 +222,10 @@ function renderInspector() {
   els.inspectorCard.innerHTML = `
     <div class="inspector-head">
       <div class="inspector-title">
-        <h2>${esc(meta.id)} · ${esc(meta.name)}</h2>
+        <h2>${esc(displayName(meta.id))}</h2>
         <span class="np-role ${meta.role === "COMMANDER" ? "commander" : ""}">${esc(meta.role)}</span>
       </div>
-      <p class="inspector-sub">${esc(meta.subtitle)}</p>
+      <p class="inspector-sub">${esc(meta.subtitle)} (${esc(meta.id)})</p>
     </div>
     <div class="kv-list">
       <div class="kv-row">
@@ -248,7 +249,7 @@ function renderInspector() {
         <div class="kv-v">${esc(hb.updated_at || "Demo snapshot")}</div>
       </div>
     </div>
-    <button id="btn-inspect-cmd" type="button" class="btn btn-primary">Message ${esc(meta.id)} in Chat</button>
+    <button id="btn-inspect-cmd" type="button" class="btn btn-primary">Message ${esc(displayName(meta.id))} in Chat</button>
   `;
 
   document.getElementById("btn-inspect-cmd")?.addEventListener("click", () => {

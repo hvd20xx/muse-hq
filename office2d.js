@@ -550,7 +550,8 @@ export function createOffice2DScene({ canvas, roster, onSelect }) {
       }
 
       drawCoworker(ctx, look.x, look.y, look, status, t, pokeOffset, meta.id === selectedId);
-      const badgeLabel = meta.role === "COMMANDER" ? `${meta.id} ★` : meta.id;
+      const cleanName = `Muse-${meta.name}`;
+      const badgeLabel = meta.role === "COMMANDER" ? `${cleanName} ★` : cleanName;
       drawBadge(ctx, look.x, look.y - 54 - pokeOffset, badgeLabel, look.badge, meta.id === selectedId);
 
       const bubble = latestBubbleFor(meta.id);
